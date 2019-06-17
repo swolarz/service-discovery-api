@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+    db:
+        image: postgres
+        restart: always
+        environment:
+            POSTGRES_PASSWORD: secret-pass
+            POSTGRES_USER: service-discovery-api
+            PGDATA: /var/lib/postgresql/data/service-discovery-api
+
+    adminer:
+        image: adminer
+        restart: always
+        ports:
+            - 5050:8080
+
+    service-discovery-api:
+        build: .
+        ports:
+            - 8090:8090

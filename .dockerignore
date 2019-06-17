@@ -1,0 +1,14 @@
+# Docker specific files
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Readme file
+README.md
+
+# Intellij
+.idea
+
+# Git
+.git
+.gitignore
