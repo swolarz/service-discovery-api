@@ -9,8 +9,8 @@
         </Console>
 
         <RollingFile name="RollingFileAppender"
-                     fileName="${sys:user.home}/var/log/service-discovery-server.log"
-                     filePattern="./logs/$${date:yyyy-MM}/service-discovery-server-%d{-yyyy-MM-dd}-%i.log.gz">
+                     fileName="${sys:user.home}/var/log/service-discovery-server/application.log"
+                     filePattern="${sys:user.home}/var/log/service-discovery-server/$${date:yyyy-MM}/%d{-yyyy-MM-dd}-%i.log.gz">
 
             <PatternLayout>
                 <pattern>%d %p %C{1.} [%t] %m%n</pattern>
@@ -31,7 +31,7 @@
 
         <Logger name="com.put.swolarz" level="trace" />
 
-        <Logger name="org.hibernate" level="debug" />
+        <Logger name="org.hibernate" level="info" />
 
         <Logger name="org.springframework.web" level="info" />
         <Logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="debug" />

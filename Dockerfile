@@ -1,14 +1,22 @@
 FROM openjdk:11-jdk-slim AS build
-COPY . /usr/app
 
-WORKDIR /usr/app
+WORKDIR /usr/src/app
 
-RUN ./mvnw clean package
+COPY .mvn ./.mvn
+COPY mvnw ./
+
+COPY pom.xml ./
+
+RUN ./mvnw dependency:go-offline
+
+COPY src ./src
+
+RUN ./mvnw package
+
 
 FROM openjdk:11-jre-slim
-COPY --from=build /usr/app/target/service-discovery-api-0.0.1-SNAPSHOT.jar /usr/bin/service-discovery-api.jar
+
+COPY --from=build /usr/src/app/target/service-discovery-api-*.jar /usr/bin/service-discovery-api.jar
 
 EXPOSE 8090
-WORKDIR /usr/bin
-
 ENTRYPOINT ["java", "-jar", "/usr/bin/service-discovery-api.jar"]

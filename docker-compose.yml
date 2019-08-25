@@ -1,21 +1,30 @@
 version: '3'
 
 services:
-    db:
-        image: postgres
-        restart: always
-        environment:
-            POSTGRES_PASSWORD: secret-pass
-            POSTGRES_USER: service-discovery-api
-            PGDATA: /var/lib/postgresql/data/service-discovery-api
-
-    adminer:
-        image: adminer
-        restart: always
+    service-discovery-db:
+        image: postgres:11.5
         ports:
-            - 5050:8080
+            - 5432:5432
+        volumes:
+            - postgresql-data:/var/lib/postgresql/data
+        environment:
+            POSTGRES_PASSWORD: secret-postgres-pass
+            POSTGRES_USER: service-discovery-api
+
+    pgadmin:
+        image: dpage/pgadmin4:4.12
+        ports:
+            - 8080:80
+        environment:
+            PGADMIN_DEFAULT_EMAIL: dpage@pgadmin.org
+            PGADMIN_DEFAULT_PASSWORD: dave-page
 
     service-discovery-api:
         build: .
         ports:
             - 8090:8090
+        depends_on:
+            - service-discovery-db
+
+volumes:
+    postgresql-data:
