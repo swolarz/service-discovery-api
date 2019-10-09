@@ -1,17 +1,12 @@
-FROM openjdk:11-jdk-slim AS build
+FROM maven:3.6-jdk-11-slim AS build
 
 WORKDIR /usr/src/app
 
-COPY .mvn ./.mvn
-COPY mvnw ./
-
 COPY pom.xml ./
-
-RUN ./mvnw dependency:go-offline
+RUN mvn dependency:go-offline
 
 COPY src ./src
-
-RUN ./mvnw package
+RUN mvn package
 
 
 FROM openjdk:11-jre-slim

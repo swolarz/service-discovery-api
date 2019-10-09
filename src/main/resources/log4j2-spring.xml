@@ -32,6 +32,7 @@
         <Logger name="com.put.swolarz" level="trace" />
 
         <Logger name="org.hibernate" level="info" />
+        <Logger name="org.hibernate.SQL" level="debug" />
 
         <Logger name="org.springframework.web" level="info" />
         <Logger name="org.springframework.web.filter.CommonsRequestLoggingFilter" level="debug" />

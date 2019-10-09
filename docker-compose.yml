@@ -14,7 +14,7 @@ services:
     pgadmin:
         image: dpage/pgadmin4:4.12
         ports:
-            - 8080:80
+            - 8090:80
         environment:
             PGADMIN_DEFAULT_EMAIL: dpage@pgadmin.org
             PGADMIN_DEFAULT_PASSWORD: dave-page
@@ -22,7 +22,7 @@ services:
     service-discovery-api:
         build: .
         ports:
-            - 8090:8090
+            - 8080:8080
         depends_on:
             - service-discovery-db
 
