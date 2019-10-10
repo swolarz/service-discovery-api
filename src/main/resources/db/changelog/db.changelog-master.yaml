@@ -1,2 +1,9 @@
 databaseChangeLog:
-    -
+    - include:
+        file: db/changelog/migrations/00001-create_data_center_entity_table.yaml
+    - include:
+        file: db/changelog/migrations/00002-create_host_node_entity_table.yaml
+    - include:
+        file: db/changelog/migrations/00003-create_app_service_entity_table.yaml
+    - include:
+        file: db/changelog/migrations/00004-create_service_instance_entity_table.yaml

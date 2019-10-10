@@ -1,0 +1,78 @@
+databaseChangeLog:
+  - changeSet:
+      id: 00004-1
+      author: swolarz
+      comment: Create table DDL for ServiceInstance entity
+      changes:
+        - createTable:
+            tableName: SERVICE_INSTANCE
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: SERVICE_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: HOST_ID
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: PORT
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STATUS
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STARTED_AT
+                  type: timestamp
+              - column:
+                  name: OPTLOCK
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 00004-2
+      author: swolarz
+      comment: Add foreign key statement for ServiceInstance referencing AppService entity
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: FK_SERVICE_INSTANCE__APP_SERVICE
+            baseTableName: SERVICE_INSTANCE
+            baseColumnNames: SERVICE_ID
+            referencedTableName: APP_SERVICE
+            referencedColumnNames: ID
+            referencesUniqueColumn: true
+  - changeSet:
+      id: 00004-3
+      author: swolarz
+      comment: Add foreign key statement for ServiceInstance referencing HostNode entity
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: FK_SERVICE_INSTANCE__HOST_NODE
+            baseTableName: SERVICE_INSTANCE
+            baseColumnNames: HOST_ID
+            referencedTableName: HOST_NODE
+            referencedColumnNames: ID
+            referencesUniqueColumn: true
+
+  - changeSet:
+      id: 00004-4
+      author: swolarz
+      comment: Create sequence generator DDL for ServiceInstance ids
+      changes:
+        - createSequence:
+            sequenceName: SERVICE_INSTANCE_SEQ_GEN
+            minValue: 1
+            incrementBy: 1

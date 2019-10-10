@@ -1,0 +1,66 @@
+databaseChangeLog:
+  - changeSet:
+      id: 00002-1
+      author: swolarz
+      comment: Create table DDL for HostNode entity
+      changes:
+        - createTable:
+            tableName: HOST_NODE
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: NAME
+                  type: varchar(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: STATUS
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: LAUNCHED_AT
+                  type: timestamp
+              - column:
+                  name: DATA_CENTER_ID
+                  type: bigint
+              - column:
+                  name: OS
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: OPTLOCK
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+
+  - changeSet:
+      id: 00002-2
+      author: swolarz
+      comment: Add foreign key statement for HostNode referencing DataCenter entity
+      changes:
+        - addForeignKeyConstraint:
+            constraintName: FK_HOST_NODE__DATA_CENTER
+            baseTableName: HOST_NODE
+            baseColumnNames: DATA_CENTER_ID
+            referencedTableName: DATA_CENTER
+            referencedColumnNames: ID
+            referencesUniqueColumn: true
+
+  - changeSet:
+      id: 00002-3
+      author: swolarz
+      comment: Create sequence generator DDL for HostNode ids
+      changes:
+        - createSequence:
+            sequenceName: HOST_NODE_SEQ_GEN
+            minValue: 1
+            incrementBy: 1
+

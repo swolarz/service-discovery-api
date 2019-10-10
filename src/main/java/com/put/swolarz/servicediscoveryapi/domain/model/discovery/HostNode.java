@@ -19,7 +19,7 @@ public class HostNode extends BaseEntity {
     public static final String NAME_COLUMN_NAME = "NAME";
     public static final String STATUS_COLUMN_NAME = "STATUS";
     public static final String LAUNCHED_AT_COLUMN_NAME = "LAUNCHED_AT";
-    public static final String DATA_CENTER_COLUMN_NAME = "DATA_CENTER_FK";
+    public static final String DATA_CENTER_COLUMN_NAME = "DATA_CENTER_ID";
     public static final String OS_COLUMN_NAME = "OS";
 
     private static final String SEQUENCE_GENERATOR_NAME = "HOST_NODE_SEQ_GEN";
@@ -37,7 +37,6 @@ public class HostNode extends BaseEntity {
     @Column(name = STATUS_COLUMN_NAME, nullable = false, length = 32)
     private HostStatus status;
 
-    @Temporal(TemporalType.TIME)
     @Column(name = LAUNCHED_AT_COLUMN_NAME)
     private LocalDateTime launchedAt;
 

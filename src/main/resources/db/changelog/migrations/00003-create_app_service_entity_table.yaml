@@ -1,0 +1,41 @@
+databaseChangeLog:
+  - changeSet:
+      id: 00003-1
+      author: swolarz
+      comment: Create table DDL for AppService entity
+      changes:
+        - createTable:
+            tableName: APP_SERVICE
+            columns:
+              - column:
+                  name: ID
+                  type: bigint
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: NAME
+                  type: varchar(128)
+                  constraints:
+                    unique: true
+                    nullable: false
+              - column:
+                  name: SERVICE_VERSION
+                  type: varchar(32)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: OPTLOCK
+                  type: bigint
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 00003-2
+      author: swolarz
+      comment: Create sequence generator DDL for AppService ids
+      changes:
+        - createSequence:
+            sequenceName: APP_SERVICE_SEQ_GEN
+            minValue: 1
+            incrementBy: 1
