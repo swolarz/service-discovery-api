@@ -1,16 +1,19 @@
 package com.put.swolarz.servicediscoveryapi.domain.model.discovery;
 
 import com.put.swolarz.servicediscoveryapi.domain.model.common.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 
 
 @Entity
 @Table(name = DataCenter.TABLE_NAME)
+@DynamicUpdate
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Builder
+@AllArgsConstructor
 public class DataCenter extends BaseEntity {
 
     public static final String TABLE_NAME = "DATA_CENTER";
@@ -31,4 +34,10 @@ public class DataCenter extends BaseEntity {
 
     @Column(name = LOCATION_COLUMN_NAME)
     private String location;
+
+
+    public DataCenter(Long id) {
+        super();
+        this.id = id;
+    }
 }

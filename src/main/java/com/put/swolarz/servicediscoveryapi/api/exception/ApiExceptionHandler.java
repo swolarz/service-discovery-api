@@ -2,6 +2,7 @@ package com.put.swolarz.servicediscoveryapi.api.exception;
 
 import com.put.swolarz.servicediscoveryapi.domain.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 
 @RestControllerAdvice
+@Slf4j
 public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     private Map<ErrorCode, HttpStatus> errorStatus;
@@ -24,6 +26,8 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(BusinessException.class)
     protected ResponseEntity<ApiError> handleBusinessException(BusinessException e) {
+        log.warn("Caught a handled business exception", e);
+
         ErrorCode errorCode = e.getCode();
 
         if (!errorStatus.containsKey(errorCode))
@@ -33,6 +37,12 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         ApiError error = new ApiError(errorCode.getMessage());
 
         return ResponseEntity.status(responseStatus).body(error);
+    }
+
+    @ExceptionHandler(Exception.class)
+    protected ResponseEntity<ApiError> handleUnhandledExceptionAndExpectTheUnexpected(Exception e) {
+        log.error("From now, expect the unexcpected", e);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiError("Unknown error"));
     }
 
     private void initErrorStatusMapping() {

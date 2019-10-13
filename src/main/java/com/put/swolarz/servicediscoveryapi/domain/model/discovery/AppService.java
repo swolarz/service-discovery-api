@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import javax.persistence.*;
+import java.util.Set;
 
 
 @Entity
@@ -31,4 +32,7 @@ public class AppService extends BaseEntity {
 
     @Column(name = SERVICE_VERSION_COLUMN_NAME, nullable = false, length = 32)
     private String serviceVersion;
+
+    @OneToMany(mappedBy = "service")
+    private Set<ServiceInstance> instances;
 }

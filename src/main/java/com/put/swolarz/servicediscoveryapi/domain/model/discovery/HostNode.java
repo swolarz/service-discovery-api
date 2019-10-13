@@ -1,17 +1,21 @@
 package com.put.swolarz.servicediscoveryapi.domain.model.discovery;
 
 import com.put.swolarz.servicediscoveryapi.domain.model.common.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.*;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 
 @Entity
 @Table(name = HostNode.TABLE_NAME)
+@DynamicUpdate
 @Data
 @EqualsAndHashCode(callSuper = true)
+@Builder
+@AllArgsConstructor
 public class HostNode extends BaseEntity {
 
     public static final String TABLE_NAME = "HOST_NODE";
@@ -46,4 +50,13 @@ public class HostNode extends BaseEntity {
 
     @Column(name = OS_COLUMN_NAME, nullable = false, length = 64)
     private String os;
+
+    @OneToMany(mappedBy = "host")
+    private Set<ServiceInstance> instances;
+
+
+    public HostNode(Long id) {
+        super();
+        this.id = id;
+    }
 }
