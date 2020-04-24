@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class HostNodeServiceImpl implements HostNodeService {
+class HostNodeServiceImpl implements HostNodeService {
 
     private final HostNodeRepository hostNodeRepository;
 

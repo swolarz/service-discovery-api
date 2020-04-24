@@ -61,7 +61,7 @@ public class HostNodeController {
     public ResponseEntity<HostNodeDto> putHostNode(@PathVariable("hostId") long hostId,
                                                    @RequestBody HostNodeDto hostNode) throws BusinessException {
         hostNode.setId(hostId);
-        HostNode updatedHostNode = hostNodeService.updateHostNode(hostNode.toEntity());
+        HostNode updatedHostNode = hostNodeService.createOrUpdateHostNode(hostNode.toEntity());
 
         return makeHostNodeResponse(updatedHostNode);
     }

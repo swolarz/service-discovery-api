@@ -5,26 +5,23 @@ import lombok.Getter;
 
 @Getter
 public class BusinessException extends Exception {
-
     private ErrorCode code;
+    private Object[] msgArgs;
 
-    public BusinessException(ErrorCode code) {
+    public BusinessException(ErrorCode code, Object... msgArgs) {
         super();
         this.code = code;
+        this.msgArgs = msgArgs;
     }
 
-    public BusinessException(ErrorCode code, String message) {
-        super(message);
+    public BusinessException(ErrorCode code, Throwable cause, Object... msgArgs) {
+        super(cause);
         this.code = code;
+        this.msgArgs = msgArgs;
     }
 
-    public BusinessException(ErrorCode code, Throwable cause) {
-        super(code.getMessage(), cause);
-        this.code = code;
-    }
-
-    protected BusinessException(ErrorCode code, String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
-        this.code = code;
+    @Override
+    public String getMessage() {
+        return code.getMessage(msgArgs);
     }
 }

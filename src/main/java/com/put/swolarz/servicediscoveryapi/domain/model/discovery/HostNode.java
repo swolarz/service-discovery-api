@@ -13,9 +13,9 @@ import java.util.Set;
 @Table(name = HostNode.TABLE_NAME)
 @DynamicUpdate
 @Data
-@EqualsAndHashCode(callSuper = true)
 @Builder
 @AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
 public class HostNode extends BaseEntity {
 
     public static final String TABLE_NAME = "HOST_NODE";

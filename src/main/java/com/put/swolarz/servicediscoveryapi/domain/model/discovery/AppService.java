@@ -3,6 +3,7 @@ package com.put.swolarz.servicediscoveryapi.domain.model.discovery;
 import com.put.swolarz.servicediscoveryapi.domain.model.common.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.util.Set;
@@ -10,6 +11,7 @@ import java.util.Set;
 
 @Entity
 @Table(name = AppService.TABLE_NAME)
+@DynamicUpdate
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class AppService extends BaseEntity {
