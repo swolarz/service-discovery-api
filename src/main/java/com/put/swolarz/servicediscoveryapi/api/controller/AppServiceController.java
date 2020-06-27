@@ -1,81 +1,108 @@
 package com.put.swolarz.servicediscoveryapi.api.controller;
 
-import com.put.swolarz.servicediscoveryapi.api.dto.appservice.AppServiceDto;
-import com.put.swolarz.servicediscoveryapi.api.dto.appservice.AppServicesPageDto;
-import com.put.swolarz.servicediscoveryapi.domain.exception.BusinessException;
-import com.put.swolarz.servicediscoveryapi.domain.exception.ErrorCode;
-import com.put.swolarz.servicediscoveryapi.domain.model.common.EntitiesPage;
-import com.put.swolarz.servicediscoveryapi.domain.model.discovery.AppService;
-import com.put.swolarz.servicediscoveryapi.domain.service.AppServicesService;
+import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.AppServiceData;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.AppServiceDetails;
+import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.AppServicesService;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.ServiceInstanceData;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.ServiceInstanceDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/services")
 @RequiredArgsConstructor
-public class AppServiceController {
+class AppServiceController {
 
     private final AppServicesService appServicesService;
 
 
-    @GetMapping("/services")
-    public ResponseEntity<AppServicesPageDto> getAppServices(@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-                                                             @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage)
-            throws BusinessException {
+    @GetMapping
+    public ResponseEntity<ResultsPage<AppServiceDetails>> getAppServices(
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage) {
 
-        EntitiesPage<AppService> appServicesPage = appServicesService.getAppServices(page, perPage);
-
-        List<AppServiceDto> appServiceDtos = appServicesPage.getEntities().stream()
-                .map(AppServiceDto::fromEntity)
-                .collect(Collectors.toList());
-
-        AppServicesPageDto resultPage = AppServicesPageDto.builder()
-                .allFound(appServicesPage.getTotalNumber())
-                .page(page)
-                .perPage(perPage)
-                .appServices(appServiceDtos)
-                .build();
-
+        ResultsPage<AppServiceDetails> resultPage = appServicesService.getAppServices(page, perPage);
         return ResponseEntity.ok(resultPage);
     }
 
-    @GetMapping("/services/{appServiceId}")
-    public ResponseEntity<AppServiceDto> getAppService(@PathVariable("appServiceId") long appServiceId) throws BusinessException {
-        AppService appService = appServicesService.getAppService(appServiceId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.APP_SERVICE_NOT_FOUND));
-
-        return ResponseEntity.ok(AppServiceDto.fromEntity(appService));
+    @GetMapping("/{appServiceId}")
+    public ResponseEntity<AppServiceDetails> getAppService(@PathVariable("appServiceId") long appServiceId) throws BusinessException {
+        AppServiceDetails appService = appServicesService.getAppService(appServiceId);
+        return ResponseEntity.ok(appService);
     }
 
-    @GetMapping("/services/{appServiceId}/instances")
-    public ResponseEntity<AppServicesPageDto> getAppServiceInstances(@PathVariable("appServiceId") long appServiceId)
+    @GetMapping("/{appServiceId}/instances")
+    public ResponseEntity<ResultsPage<ServiceInstanceDetails>> getAppServiceInstances(
+            @PathVariable("appServiceId") long appServiceId,
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage) throws BusinessException {
+
+        ResultsPage<ServiceInstanceDetails> resultsPage = appServicesService.getAppServiceInstances(appServiceId, page, perPage);
+        return ResponseEntity.ok(resultsPage);
+    }
+
+    @GetMapping("/{appServiceId}/instances/{instanceId}")
+    public ResponseEntity<ServiceInstanceDetails> getAppServiceInstanceDetails(@PathVariable("appServiceId") long appServiceId,
+                                                                               @PathVariable("instanceId") long instanceId)
+            throws BusinessException {
+
+        ServiceInstanceDetails instanceDetails = appServicesService.getAppServiceInstance(appServiceId, instanceId);
+        return ResponseEntity.ok(instanceDetails);
+    }
+
+    @PostMapping("/{appServiceId}/instances")
+    public ResponseEntity<ServiceInstanceDetails> postAppServiceInstance(@PathVariable("appServiceId") long appServiceId,
+                                                                         @RequestBody ServiceInstanceData serviceInstanceData)
         throws BusinessException {
 
-        throw new UnsupportedOperationException("Method not implemented");
+        serviceInstanceData.setAppServiceId(appServiceId);
+        ServiceInstanceDetails serviceInstance = appServicesService.addAppServiceInstance(serviceInstanceData);
+
+        return ResponseEntity.ok(serviceInstance);
     }
 
-    @PostMapping("/services")
-    public ResponseEntity<AppServiceDto> postNewAppService(@RequestBody AppServiceDto appService) throws BusinessException {
+    @DeleteMapping("/{appServiceId}/instances/{instanceId}")
+    public ResponseEntity<Long> deleteAppServiceInstance(@PathVariable("appServiceId") long appServiceId,
+                                                         @PathVariable("instanceId") long instanceId) throws BusinessException {
 
-        throw new UnsupportedOperationException("Method not implemented");
+        appServicesService.removeAppServiceInstance(instanceId, appServiceId);
+        return ResponseEntity.ok(instanceId);
     }
 
-    @PostMapping("/service/{appServiceId}")
-    public ResponseEntity<AppServiceDto> postAppServiceWithId(@PathVariable("appServiceid") long appServiceId) throws BusinessException {
+    @PostMapping
+    public ResponseEntity<AppServiceDetails> postAppService(@RequestBody AppServiceData appService) throws BusinessException {
 
-        throw new UnsupportedOperationException("Method not implemented");
+        AppServiceDetails appServiceDetails = appServicesService.createAppService(appService);
+        return ResponseEntity.ok(appServiceDetails);
     }
 
-    @GetMapping("/services/{appServiceId}/instances/{instanceId}")
-    public ResponseEntity<AppServiceDto> getAppServiceInstanceDetails(@PathVariable("appServiceid") long appServiceId,
-                                                                      @PathVariable("instanceId") long instanceId)
-        throws BusinessException {
+    @PostMapping("/{appServiceId}")
+    public ResponseEntity<AppServiceDetails> postAppServiceWithId(@PathVariable("appServiceId") long appServiceId,
+                                                                  @RequestBody AppServiceData appService) throws BusinessException {
 
-        throw new UnsupportedOperationException("Method not implemented");
+        appService.setId(appServiceId);
+        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appService, true);
+
+        return ResponseEntity.ok(appServiceDetails);
+    }
+
+    @PutMapping("/{appServiceId}")
+    public ResponseEntity<AppServiceDetails> putAppService(@PathVariable("appServiceId") long appServiceId,
+                                                           @RequestBody AppServiceData appService) throws BusinessException {
+
+        appService.setId(appServiceId);
+        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appService, false);
+
+        return ResponseEntity.ok(appServiceDetails);
+    }
+
+    @DeleteMapping("/{appServiceId}")
+    public ResponseEntity<Long> deleteAppService(@PathVariable("appServiceId") long appServiceId) throws BusinessException {
+        appServicesService.removeAppService(appServiceId);
+        return ResponseEntity.ok(appServiceId);
     }
 }

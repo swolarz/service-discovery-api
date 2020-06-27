@@ -6,11 +6,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.CommonsRequestLoggingFilter;
 
 
-@Slf4j
 @Configuration
-public class RequestLoggingFilterConfig {
+@Slf4j
+class RequestLoggingFilterConfig {
     private static final int REQUEST_PAYLOAD_MAX_LENGTH = 1024;
-
 
     @Bean
     public CommonsRequestLoggingFilter getLoggingFilter() {

@@ -1,85 +1,71 @@
 package com.put.swolarz.servicediscoveryapi.api.controller;
 
-import com.put.swolarz.servicediscoveryapi.api.dto.common.PatchUpdateDictionary;
-import com.put.swolarz.servicediscoveryapi.api.dto.hostnode.HostNodeDto;
-import com.put.swolarz.servicediscoveryapi.api.dto.hostnode.HostNodesPageDto;
-import com.put.swolarz.servicediscoveryapi.domain.exception.BusinessException;
-import com.put.swolarz.servicediscoveryapi.domain.model.common.EntitiesPage;
-import com.put.swolarz.servicediscoveryapi.domain.model.discovery.HostNode;
-import com.put.swolarz.servicediscoveryapi.domain.service.HostNodeService;
+import com.put.swolarz.servicediscoveryapi.domain.common.common.PatchUpdateDictionary;
+import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeData;
+import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.HostNodeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/hosts")
 @RequiredArgsConstructor
-public class HostNodeController {
+class HostNodeController {
 
     private final HostNodeService hostNodeService;
 
 
-    @GetMapping("/hosts")
-    public ResponseEntity<HostNodesPageDto> getHostNodes(@RequestParam(value = "page", required = false, defaultValue = "0") int page,
-                                                         @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage)
-            throws BusinessException {
+    @GetMapping
+    public ResponseEntity<ResultsPage<HostNodeDetails>> getHostNodes(
+            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage) throws BusinessException {
 
-        EntitiesPage<HostNode> resultPage = hostNodeService.getHostNodesPage(page, perPage);
-        List<HostNodeDto> hostNodeDtos = resultPage.getEntities().stream().map(HostNodeDto::fromEntity).collect(Collectors.toList());
-        HostNodesPageDto responseBody = new HostNodesPageDto(page, perPage, resultPage.getTotalNumber(), hostNodeDtos);
-
-        return ResponseEntity.ok(responseBody);
+        ResultsPage<HostNodeDetails> resultsPage = hostNodeService.getHostNodesPage(page, perPage);
+        return ResponseEntity.ok(resultsPage);
     }
 
-    @GetMapping("/hosts/{hostId}")
-    public ResponseEntity<HostNodeDto> getHostNode(@PathVariable("id") long hostId) throws BusinessException {
-        // Assuming that the response is non null, exception is thrown if not found
-        HostNode hostNode = hostNodeService.getHostNode(hostId);
-        return makeHostNodeResponse(hostNode);
+    @GetMapping("/{hostId}")
+    public ResponseEntity<HostNodeDetails> getHostNode(@PathVariable("id") long hostId) throws BusinessException {
+
+        HostNodeDetails hostNode = hostNodeService.getHostNode(hostId);
+        return ResponseEntity.ok(hostNode);
     }
 
-    @PostMapping("/hosts")
-    public ResponseEntity<HostNodeDto> postHostNode(@RequestBody HostNodeDto hostNode) throws BusinessException {
-        HostNode newHostNode = hostNodeService.createHostNode(hostNode.toEntity());
-        return makeHostNodeResponse(newHostNode);
+    @PostMapping
+    public ResponseEntity<HostNodeDetails> postHostNode(@RequestBody HostNodeData hostNode) throws BusinessException {
+
+        HostNodeDetails newHostNode = hostNodeService.createHostNode(hostNode);
+        return ResponseEntity.ok(newHostNode);
     }
 
-    @PostMapping("/hosts/{hostId}")
-    public ResponseEntity<HostNodeDto> postHostNodeWithId(@PathVariable("hostId") long hostId,
-                                                          @RequestBody HostNodeDto hostNode) throws BusinessException {
-        hostNode.setId(hostId);
-        HostNode newHostNode = hostNodeService.createHostNode(hostNode.toEntity());
+    @PostMapping("/{hostId}")
+    public ResponseEntity<HostNodeDetails> postHostNodeWithId(@PathVariable("hostId") long hostId,
+                                                              @RequestBody HostNodeData hostNode) throws BusinessException {
 
-        return makeHostNodeResponse(newHostNode);
+        HostNodeDetails newHostNode = hostNodeService.updateHostNode(hostNode, hostId, true);
+        return ResponseEntity.ok(newHostNode);
     }
 
-    @PutMapping("/hosts/{hostId}")
-    public ResponseEntity<HostNodeDto> putHostNode(@PathVariable("hostId") long hostId,
-                                                   @RequestBody HostNodeDto hostNode) throws BusinessException {
-        hostNode.setId(hostId);
-        HostNode updatedHostNode = hostNodeService.createOrUpdateHostNode(hostNode.toEntity());
-
-        return makeHostNodeResponse(updatedHostNode);
+    @PutMapping("/{hostId}")
+    public ResponseEntity<HostNodeDetails> putHostNode(@PathVariable("hostId") long hostId,
+                                                       @RequestBody HostNodeData hostNode) throws BusinessException {
+        HostNodeDetails updatedHostNode = hostNodeService.updateHostNode(hostNode, hostId, false);
+        return ResponseEntity.ok(updatedHostNode);
     }
 
     @PatchMapping("/hosts/{hostId}")
-    public ResponseEntity<HostNodeDto> patchHostNode(@PathVariable("hostId") long hostId,
-                                                     @RequestBody PatchUpdateDictionary updateDictionary) throws BusinessException{
+    public ResponseEntity<HostNodeDetails> patchHostNode(@PathVariable("hostId") long hostId,
+                                                         @RequestBody PatchUpdateDictionary updateDictionary) throws BusinessException {
         throw new UnsupportedOperationException("not implemented");
     }
 
     @DeleteMapping("/hosts/{hostId}")
     public ResponseEntity<Long> deleteHostNode(@PathVariable("hostId") long hostId) throws BusinessException {
-        long deletedHostId = hostNodeService.removeHostNode(hostId);
-        return ResponseEntity.ok(deletedHostId);
-    }
-
-    private static ResponseEntity<HostNodeDto> makeHostNodeResponse(HostNode hostNode) {
-        HostNodeDto hostNodeResponse = HostNodeDto.fromEntity(hostNode);
-        return ResponseEntity.ok(hostNodeResponse);
+        hostNodeService.removeHostNode(hostId);
+        return ResponseEntity.ok().build();
     }
 }

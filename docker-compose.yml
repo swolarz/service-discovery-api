@@ -3,18 +3,16 @@ version: '3'
 services:
     service-discovery-db:
         image: postgres:11.5
-        ports:
-            - 5432:5432
         volumes:
-            - postgresql-data:/var/lib/postgresql/data
+            - app-db-data:/var/lib/postgresql/data
         environment:
-            POSTGRES_PASSWORD: secret-postgres-pass
             POSTGRES_USER: service-discovery-api
+            POSTGRES_PASSWORD: secret-postgres-pass
 
     pgadmin:
         image: dpage/pgadmin4:4.12
         ports:
-            - 8090:80
+            - 8080:80
         environment:
             PGADMIN_DEFAULT_EMAIL: dpage@pgadmin.org
             PGADMIN_DEFAULT_PASSWORD: dave-page
@@ -22,9 +20,12 @@ services:
     service-discovery-api:
         build: .
         ports:
-            - 8080:8080
-        depends_on:
-            - service-discovery-db
+            - 8090:8090
+        environment:
+            APP_DB_HOST: service-discovery-db
+            APP_DB_PORT: 5432
+            APP_DB_USER: service-discovery-api
+            APP_DB_PASS: secret-postgres-pass
 
 volumes:
-    postgresql-data:
+    app-db-data:

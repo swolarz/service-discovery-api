@@ -13,5 +13,5 @@ FROM openjdk:11-jre-slim
 
 COPY --from=build /usr/src/app/target/service-discovery-api-*.jar /usr/bin/service-discovery-api.jar
 
-EXPOSE 8080
+EXPOSE 8090
 ENTRYPOINT ["java", "-jar", "/usr/bin/service-discovery-api.jar"]

@@ -29,6 +29,8 @@ databaseChangeLog:
               - column:
                   name: DATA_CENTER_ID
                   type: bigint
+                  constraints:
+                    nullable: false
               - column:
                   name: OS
                   type: varchar(64)
