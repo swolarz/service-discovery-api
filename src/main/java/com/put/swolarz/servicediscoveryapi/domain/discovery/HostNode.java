@@ -1,6 +1,6 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.BaseEntity;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 

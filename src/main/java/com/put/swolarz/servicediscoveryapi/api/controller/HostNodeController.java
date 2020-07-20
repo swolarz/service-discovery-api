@@ -1,14 +1,16 @@
 package com.put.swolarz.servicediscoveryapi.api.controller;
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.PatchUpdateDictionary;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeData;
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.HostNodeService;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeUpdateDictionary;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -59,7 +61,9 @@ class HostNodeController {
 
     @PatchMapping("/hosts/{hostId}")
     public ResponseEntity<HostNodeDetails> patchHostNode(@PathVariable("hostId") long hostId,
-                                                         @RequestBody PatchUpdateDictionary updateDictionary) throws BusinessException {
+                                                         @RequestBody Map<String, String> updateDictionary)
+            throws BusinessException {
+
         throw new UnsupportedOperationException("not implemented");
     }
 

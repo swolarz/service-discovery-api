@@ -6,9 +6,9 @@ import lombok.Getter;
 public class BusinessException extends Exception {
 
     @Getter
-    private ErrorCode code;
+    private final ErrorCode code;
 
-    private Object[] msgArgs;
+    private final Object[] msgArgs;
 
     public BusinessException(ErrorCode code, Object... msgArgs) {
         super();

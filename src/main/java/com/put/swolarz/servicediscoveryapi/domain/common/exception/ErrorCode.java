@@ -11,6 +11,7 @@ public enum ErrorCode {
     INVALID_PAGE_REQUESTED("Invalid page parameters for retrieving pageable list of objects"),
     ENTITY_ID_NOT_SPECIFIED("Id of the entity not specified"),
     DATA_CENTER_NOT_FOUND("Data center with id = %d not found"),
+    DATA_CENTER_ALREADY_EXISTS("Data center with given id = %d already exists"),
     HOST_NODE_NOT_FOUND("Host node with id = %d not found"),
     HOST_NODE_ALREADY_EXISTS("The host node with id = %d already exists"),
     APP_SERVICE_NOT_FOUND("App service with given id = %d not found"),

@@ -1,7 +1,6 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.PatchUpdateDictionary;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
@@ -28,7 +27,7 @@ public interface AppServicesService {
 
     AppServiceDetails createAppService(AppServiceData appService) throws AppServiceAlreadyExistsException;
     AppServiceDetails updateAppService(AppServiceData appService, boolean create) throws AppServiceNotFoundException;
-    AppServiceDetails updateAppService(long appServiceId, PatchUpdateDictionary updateAttributes) throws BusinessException;
+    AppServiceDetails updateAppService(long appServiceId, AppServiceUpdateDictionary updateAttributes) throws BusinessException;
 
     void removeAppService(long appServiceId) throws AppServiceNotFoundException;
 }

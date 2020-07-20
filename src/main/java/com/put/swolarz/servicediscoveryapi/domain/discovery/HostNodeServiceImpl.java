@@ -1,10 +1,11 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.PatchUpdateDictionary;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadOnlyTransaction;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.common.util.DtoUtils;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeData;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeUpdateDictionary;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeAlreadyExistsException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
@@ -14,14 +15,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 
 @Service
-@Transactional
+@ReadOnlyTransaction
 @RequiredArgsConstructor
 class HostNodeServiceImpl implements HostNodeService {
 
@@ -104,7 +103,7 @@ class HostNodeServiceImpl implements HostNodeService {
     }
 
     @Override
-    public HostNodeDetails updateHostNode(long hostNodeId, PatchUpdateDictionary updateAttributes) {
+    public HostNodeDetails updateHostNode(long hostNodeId, HostNodeUpdateDictionary updateAttributes) {
         throw new UnsupportedOperationException("Not implemented");
     }
 

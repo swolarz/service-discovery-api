@@ -1,6 +1,6 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.BaseEntity;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -13,8 +13,6 @@ import java.time.LocalDateTime;
 @DynamicUpdate
 @Data
 @EqualsAndHashCode(callSuper = true)
-@Builder
-@AllArgsConstructor
 class ServiceInstance extends BaseEntity {
 
     public static final String TABLE_NAME = "SERVICE_INSTANCE";
@@ -50,4 +48,16 @@ class ServiceInstance extends BaseEntity {
 
     @Column(name = STARTED_AT_COLUMN_NAME)
     private LocalDateTime startedAt;
+
+
+    public ServiceInstance(AppService service, HostNode host, int port) {
+        this.id = null;
+
+        this.service = service;
+        this.host = host;
+        this.port = port;
+
+        this.status = InstanceStatus.RUNNING;
+        this.startedAt = LocalDateTime.now();
+    }
 }

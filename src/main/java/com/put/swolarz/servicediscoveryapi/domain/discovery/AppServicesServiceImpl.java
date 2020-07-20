@@ -1,31 +1,34 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.PatchUpdateDictionary;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadOnlyTransaction;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.common.util.DtoUtils;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceAlreadyExistsException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceNotFoundException;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.ServiceInstanceNotFoundException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
 @Service
-@Transactional
+@ReadOnlyTransaction
 @RequiredArgsConstructor
 class AppServicesServiceImpl implements AppServicesService {
 
     private final AppServiceRepository appServiceRepository;
     private final ServiceInstanceRepository serviceInstanceRepository;
+    private final HostNodeRepository hostNodeRepository;
 
 
     @Override
@@ -77,21 +80,88 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     @Override
-    public AppServiceDetails createAppService(AppServiceData appService) throws AppServiceAlreadyExistsException {
-        if (appService.getId() != null) {
-            AppService service = appServiceRepository.findById(appService.getId())
-                    .orElseThrow(() -> )
+    public ServiceInstanceDetails addAppServiceInstance(ServiceInstanceData serviceInstanceData)
+            throws AppServiceNotFoundException, HostNodeNotFoundException {
+
+        try {
+            AppService service = appServiceRepository.findById(serviceInstanceData.getAppServiceId())
+                    .orElseThrow(() -> new AppServiceNotFoundException(serviceInstanceData.getAppServiceId()));
+
+            HostNode host = hostNodeRepository.findById(serviceInstanceData.getHostNodeId())
+                    .orElseThrow(() -> new HostNodeNotFoundException(serviceInstanceData.getHostNodeId()));
+
+            ServiceInstance instance = serviceInstanceRepository.saveAndFlush(
+                    new ServiceInstance(service, host, serviceInstanceData.getPort())
+            );
+
+            return toServiceInstanceDetails(instance);
+        }
+        catch (DataIntegrityViolationException e) {
+            if (!appServiceRepository.existsById(serviceInstanceData.getAppServiceId()))
+                throw new AppServiceNotFoundException(serviceInstanceData.getAppServiceId());
+
+            if (!hostNodeRepository.existsById(serviceInstanceData.getHostNodeId()))
+                throw new HostNodeNotFoundException(serviceInstanceData.getHostNodeId());
+
+            throw new RuntimeException("Unexpected service instance creation error", e);
         }
     }
 
     @Override
-    public AppServiceDetails updateAppService(AppServiceData appService, boolean create) throws AppServiceNotFoundException {
-        return null;
+    public void removeAppServiceInstance(long serviceInstanceId, long appServiceId)
+            throws AppServiceNotFoundException, ServiceInstanceNotFoundException {
+
+        if (!appServiceRepository.existsById(appServiceId))
+            throw new AppServiceNotFoundException(appServiceId);
+
+        try {
+            serviceInstanceRepository.deleteById(serviceInstanceId);
+        }
+        catch (EmptyResultDataAccessException e) {
+            throw new ServiceInstanceNotFoundException(appServiceId, serviceInstanceId, e);
+        }
     }
 
     @Override
-    public AppServiceDetails updateAppService(long appServiceId, PatchUpdateDictionary updateAttributes) throws BusinessException {
-        return null;
+    public AppServiceDetails createAppService(AppServiceData appServiceData) throws AppServiceAlreadyExistsException {
+        if (appServiceData.getId() != null && appServiceRepository.existsById(appServiceData.getId()))
+            throw new AppServiceAlreadyExistsException(appServiceData.getId());
+
+        AppService appService = appServiceRepository.save(
+                new AppService(appServiceData.getId(), appServiceData.getName(), appServiceData.getServiceVersion())
+        );
+
+        return toAppServiceSaveInfo(appService);
+    }
+
+    @Override
+    public AppServiceDetails updateAppService(AppServiceData appServiceData, boolean create) throws AppServiceNotFoundException {
+        if (appServiceData.getId() == null)
+            throw new IllegalArgumentException("No app service id specified");
+
+        Optional<AppService> existingAppService = appServiceRepository.findById(appServiceData.getId());
+        if (existingAppService.isEmpty()) {
+            if (create) {
+                try {
+                    return createAppService(appServiceData);
+                }
+                catch (AppServiceAlreadyExistsException e) {
+                    throw new RuntimeException("Failed to create car with specified id", e);
+                }
+            }
+            throw new AppServiceNotFoundException(appServiceData.getId());
+        }
+
+        AppService appService = existingAppService.get();
+        appService.setName(appServiceData.getName());
+        appService.setServiceVersion(appServiceData.getServiceVersion());
+
+        return toAppServiceSaveInfo(appService);
+    }
+
+    @Override
+    public AppServiceDetails updateAppService(long appServiceId, AppServiceUpdateDictionary updateAttributes) throws BusinessException {
+        throw new UnsupportedOperationException("App service partial update not implemented");
     }
 
     @Override
@@ -104,22 +174,30 @@ class AppServicesServiceImpl implements AppServicesService {
         }
     }
 
+    private AppServiceDetails toAppServiceSaveInfo(AppService appService) {
+        return toAppServiceDetails(appService, null);
+    }
+
     private AppServiceDetails toAppServiceDetails(AppService appService, Page<ServiceInstance> topInstances) {
-        return AppServiceDetails.builder()
+        AppServiceDetails.AppServiceDetailsBuilder appServiceBuilder = AppServiceDetails.builder()
                 .id(appService.getId())
                 .name(appService.getName())
-                .serviceVersion(appService.getServiceVersion())
-                .instancesInfo(
-                        AppServiceInstancesInfo.builder()
-                                .totalCount(topInstances.getTotalElements())
-                                .topInstances(
-                                        topInstances.stream()
-                                                .map(this::toServiceInstanceInfo)
-                                                .collect(Collectors.toList())
-                                )
-                                .build()
-                )
-                .build();
+                .serviceVersion(appService.getServiceVersion());
+
+        if (topInstances != null) {
+            appServiceBuilder = appServiceBuilder.instancesInfo(
+                    AppServiceInstancesInfo.builder()
+                            .totalCount(topInstances.getTotalElements())
+                            .topInstances(
+                                    topInstances.stream()
+                                            .map(this::toServiceInstanceInfo)
+                                            .collect(Collectors.toList())
+                            )
+                            .build()
+            );
+        }
+
+        return appServiceBuilder.build();
     }
 
     private ServiceInstanceInfo toServiceInstanceInfo(ServiceInstance serviceInstance) {

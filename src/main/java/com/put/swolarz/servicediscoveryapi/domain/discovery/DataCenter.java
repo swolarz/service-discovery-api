@@ -1,6 +1,6 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.BaseEntity;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 
@@ -11,7 +11,6 @@ import javax.persistence.*;
 @Table(name = DataCenter.TABLE_NAME)
 @DynamicUpdate
 @Getter
-@Builder
 @EqualsAndHashCode(callSuper = true)
 class DataCenter extends BaseEntity {
 
@@ -31,16 +30,26 @@ class DataCenter extends BaseEntity {
 
     @Column(name = NAME_COLUMN_NAME, nullable = false, unique = true, length = 128)
     @Setter
+    @NonNull
     private String name;
 
-    @Column(name = LOCATION_COLUMN_NAME)
-    @Setter
-    private String location;
+    @Column(name = LOCATION_COLUMN_NAME, nullable = false)
+    @NonNull
+    private final String location;
 
 
-    public DataCenter(Long id, String name, String location) {
-        this.id = id;
+    public DataCenter(String name, String location) {
+        this.id = null;
         this.name = name;
         this.location = location;
+    }
+
+    private boolean sameLocation(String location) {
+        return this.location.equals(location);
+    }
+
+    public void setLocation(String location) {
+        if (!sameLocation(location))
+            throw new IllegalArgumentException("Data center location is unmodifiable");
     }
 }

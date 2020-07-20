@@ -1,4 +1,4 @@
-package com.put.swolarz.servicediscoveryapi.domain.common.common;
+package com.put.swolarz.servicediscoveryapi.domain.common.data;
 
 import lombok.AccessLevel;
 import lombok.Data;

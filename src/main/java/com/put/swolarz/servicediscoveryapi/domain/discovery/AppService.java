@@ -1,18 +1,19 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
-import com.put.swolarz.servicediscoveryapi.domain.common.common.BaseEntity;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
-import java.util.Set;
 
 
 @Entity
 @Table(name = AppService.TABLE_NAME)
 @DynamicUpdate
 @Data
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 class AppService extends BaseEntity {
 

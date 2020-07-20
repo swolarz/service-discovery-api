@@ -1,15 +1,14 @@
 package com.put.swolarz.servicediscoveryapi.api.controller;
 
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.AppServiceData;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.AppServiceDetails;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.AppServicesService;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.ServiceInstanceData;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.ServiceInstanceDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 
 @RestController
@@ -85,7 +84,7 @@ class AppServiceController {
                                                                   @RequestBody AppServiceData appService) throws BusinessException {
 
         appService.setId(appServiceId);
-        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appService, true);
+        AppServiceDetails appServiceDetails = appServicesService.createAppService(appService);
 
         return ResponseEntity.ok(appServiceDetails);
     }
@@ -95,7 +94,17 @@ class AppServiceController {
                                                            @RequestBody AppServiceData appService) throws BusinessException {
 
         appService.setId(appServiceId);
-        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appService, false);
+        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appService, true);
+
+        return ResponseEntity.ok(appServiceDetails);
+    }
+
+    @PatchMapping("/{appServiceId}")
+    public ResponseEntity<AppServiceDetails> patchAppService(@PathVariable("appServiceId") long appServiceId,
+                                                @RequestBody Map<String, Object> updateData) throws BusinessException {
+
+        AppServiceUpdateDictionary updateDictionary = new AppServiceUpdateDictionary(updateData);
+        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appServiceId, updateDictionary);
 
         return ResponseEntity.ok(appServiceDetails);
     }
