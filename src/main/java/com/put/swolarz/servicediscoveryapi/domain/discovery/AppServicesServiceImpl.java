@@ -1,11 +1,10 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
 import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadOnlyTransaction;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadWriteTransaction;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
-import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.common.util.DtoUtils;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceAlreadyExistsException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.ServiceInstanceNotFoundException;
@@ -17,12 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 
 @Service
-@ReadOnlyTransaction
+@ReadWriteTransaction
 @RequiredArgsConstructor
 class AppServicesServiceImpl implements AppServicesService {
 
@@ -32,6 +30,7 @@ class AppServicesServiceImpl implements AppServicesService {
 
 
     @Override
+    @ReadOnlyTransaction
     public ResultsPage<AppServiceDetails> getAppServices(int page, int perPage) {
         PageRequest pageRequest = PageRequest.of(page, perPage);
         Page<AppService> resultsPage = appServiceRepository.findAll(pageRequest);
@@ -46,6 +45,7 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     @Override
+    @ReadOnlyTransaction
     public AppServiceDetails getAppService(long appServiceId) throws AppServiceNotFoundException {
         AppService appService = appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
@@ -58,6 +58,7 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     @Override
+    @ReadOnlyTransaction
     public ResultsPage<ServiceInstanceDetails> getAppServiceInstances(long appServiceId, int page, int perPage) throws AppServiceNotFoundException {
         appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
@@ -69,6 +70,7 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     @Override
+    @ReadOnlyTransaction
     public ServiceInstanceDetails getAppServiceInstance(long appServiceId, long serviceInstanceId) throws AppServiceNotFoundException, ServiceInstanceNotFoundException {
         appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
@@ -123,36 +125,36 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     @Override
-    public AppServiceDetails createAppService(AppServiceData appServiceData) throws AppServiceAlreadyExistsException {
-        if (appServiceData.getId() != null && appServiceRepository.existsById(appServiceData.getId()))
-            throw new AppServiceAlreadyExistsException(appServiceData.getId());
-
+    public AppServiceDetails createAppService(AppServiceData appServiceData) {
         AppService appService = appServiceRepository.save(
-                new AppService(appServiceData.getId(), appServiceData.getName(), appServiceData.getServiceVersion())
+                new AppService(appServiceData.getName(), appServiceData.getServiceVersion())
         );
 
         return toAppServiceSaveInfo(appService);
     }
 
     @Override
-    public AppServiceDetails updateAppService(AppServiceData appServiceData, boolean create) throws AppServiceNotFoundException {
-        if (appServiceData.getId() == null)
-            throw new IllegalArgumentException("No app service id specified");
+    public AppServiceDetails createOrUpdateAppService(long appServiceId, AppServiceData appServiceData) {
+        AppService appService = appServiceRepository.findById(appServiceId)
+                .map(service -> {
+                    service.setName(appServiceData.getName());
+                    service.setServiceVersion(appServiceData.getServiceVersion());
 
-        Optional<AppService> existingAppService = appServiceRepository.findById(appServiceData.getId());
-        if (existingAppService.isEmpty()) {
-            if (create) {
-                try {
-                    return createAppService(appServiceData);
-                }
-                catch (AppServiceAlreadyExistsException e) {
-                    throw new RuntimeException("Failed to create car with specified id", e);
-                }
-            }
-            throw new AppServiceNotFoundException(appServiceData.getId());
-        }
+                    return service;
+                })
+                .orElseGet(() -> appServiceRepository.save(
+                        new AppService(appServiceData.getName(), appServiceData.getServiceVersion())
+                ));
 
-        AppService appService = existingAppService.get();
+        return toAppServiceSaveInfo(appService);
+    }
+
+
+    @Override
+    public AppServiceDetails updateAppService(long appServiceId, AppServiceData appServiceData) throws AppServiceNotFoundException {
+        AppService appService = appServiceRepository.findById(appServiceId)
+                .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
+
         appService.setName(appServiceData.getName());
         appService.setServiceVersion(appServiceData.getServiceVersion());
 
@@ -160,8 +162,14 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     @Override
-    public AppServiceDetails updateAppService(long appServiceId, AppServiceUpdateDictionary updateAttributes) throws BusinessException {
-        throw new UnsupportedOperationException("App service partial update not implemented");
+    public AppServiceDetails updateAppService(long appServiceId, AppServiceUpdateData updateData) throws AppServiceNotFoundException {
+        AppService appService = appServiceRepository.findById(appServiceId)
+                .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
+
+        updateData.getName().ifPresent(appService::setName);
+        updateData.getServiceVersion().ifPresent(appService::setServiceVersion);
+
+        return toAppServiceSaveInfo(appService);
     }
 
     @Override

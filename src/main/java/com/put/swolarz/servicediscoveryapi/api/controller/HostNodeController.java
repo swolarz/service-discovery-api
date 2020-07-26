@@ -5,7 +5,7 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeData;
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.HostNodeService;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeUpdateDictionary;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeUpdateData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,23 +48,24 @@ class HostNodeController {
     public ResponseEntity<HostNodeDetails> postHostNodeWithId(@PathVariable("hostId") long hostId,
                                                               @RequestBody HostNodeData hostNode) throws BusinessException {
 
-        HostNodeDetails newHostNode = hostNodeService.updateHostNode(hostNode, hostId, true);
+        HostNodeDetails newHostNode = hostNodeService.updateHostNode(hostId, hostNode);
         return ResponseEntity.ok(newHostNode);
     }
 
     @PutMapping("/{hostId}")
     public ResponseEntity<HostNodeDetails> putHostNode(@PathVariable("hostId") long hostId,
                                                        @RequestBody HostNodeData hostNode) throws BusinessException {
-        HostNodeDetails updatedHostNode = hostNodeService.updateHostNode(hostNode, hostId, false);
+
+        HostNodeDetails updatedHostNode = hostNodeService.createOrUpdateHostNode(hostId, hostNode);
         return ResponseEntity.ok(updatedHostNode);
     }
 
     @PatchMapping("/hosts/{hostId}")
     public ResponseEntity<HostNodeDetails> patchHostNode(@PathVariable("hostId") long hostId,
-                                                         @RequestBody Map<String, String> updateDictionary)
-            throws BusinessException {
+                                                         @RequestBody HostNodeUpdateData updateData) throws BusinessException {
 
-        throw new UnsupportedOperationException("not implemented");
+        HostNodeDetails updatedHostNode = hostNodeService.updateHostNode(hostId, updateData);
+        return ResponseEntity.ok(updatedHostNode);
     }
 
     @DeleteMapping("/hosts/{hostId}")

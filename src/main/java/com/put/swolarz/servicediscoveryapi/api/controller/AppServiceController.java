@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/services")
@@ -73,7 +71,7 @@ class AppServiceController {
     }
 
     @PostMapping
-    public ResponseEntity<AppServiceDetails> postAppService(@RequestBody AppServiceData appService) throws BusinessException {
+    public ResponseEntity<AppServiceDetails> postAppService(@RequestBody AppServiceData appService) {
 
         AppServiceDetails appServiceDetails = appServicesService.createAppService(appService);
         return ResponseEntity.ok(appServiceDetails);
@@ -83,29 +81,23 @@ class AppServiceController {
     public ResponseEntity<AppServiceDetails> postAppServiceWithId(@PathVariable("appServiceId") long appServiceId,
                                                                   @RequestBody AppServiceData appService) throws BusinessException {
 
-        appService.setId(appServiceId);
-        AppServiceDetails appServiceDetails = appServicesService.createAppService(appService);
-
+        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appServiceId, appService);
         return ResponseEntity.ok(appServiceDetails);
     }
 
     @PutMapping("/{appServiceId}")
     public ResponseEntity<AppServiceDetails> putAppService(@PathVariable("appServiceId") long appServiceId,
-                                                           @RequestBody AppServiceData appService) throws BusinessException {
+                                                           @RequestBody AppServiceData appService) {
 
-        appService.setId(appServiceId);
-        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appService, true);
-
+        AppServiceDetails appServiceDetails = appServicesService.createOrUpdateAppService(appServiceId, appService);
         return ResponseEntity.ok(appServiceDetails);
     }
 
     @PatchMapping("/{appServiceId}")
     public ResponseEntity<AppServiceDetails> patchAppService(@PathVariable("appServiceId") long appServiceId,
-                                                @RequestBody Map<String, Object> updateData) throws BusinessException {
+                                                             @RequestBody AppServiceUpdateData updateData) throws BusinessException {
 
-        AppServiceUpdateDictionary updateDictionary = new AppServiceUpdateDictionary(updateData);
-        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appServiceId, updateDictionary);
-
+        AppServiceDetails appServiceDetails = appServicesService.updateAppService(appServiceId, updateData);
         return ResponseEntity.ok(appServiceDetails);
     }
 

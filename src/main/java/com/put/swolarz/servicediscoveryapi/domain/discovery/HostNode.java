@@ -35,22 +35,26 @@ class HostNode extends BaseEntity {
 
     @Column(name = NAME_COLUMN_NAME, nullable = false, length = 128)
     @Setter
+    @NonNull
     private String name;
 
     @Enumerated(EnumType.STRING)
     @Column(name = STATUS_COLUMN_NAME, nullable = false, length = 32)
+    @NonNull
     private HostStatus status;
 
     @Column(name = LAUNCHED_AT_COLUMN_NAME)
     private LocalDateTime launchedAt;
 
     @ManyToOne
-    @JoinColumn(name = DATA_CENTER_COLUMN_NAME)
+    @JoinColumn(name = DATA_CENTER_COLUMN_NAME, nullable = false)
     @Setter
+    @NonNull
     private DataCenter dataCenter;
 
     @Column(name = OS_COLUMN_NAME, nullable = false, length = 64)
     @Setter
+    @NonNull
     private String os;
 
     @OneToMany(mappedBy = "host")

@@ -44,12 +44,12 @@ class DataCenter extends BaseEntity {
         this.location = location;
     }
 
-    private boolean sameLocation(String location) {
-        return this.location.equals(location);
-    }
-
     public void setLocation(String location) {
         if (!sameLocation(location))
             throw new IllegalArgumentException("Data center location is unmodifiable");
+    }
+
+    private boolean sameLocation(String location) {
+        return this.location.equals(location);
     }
 }

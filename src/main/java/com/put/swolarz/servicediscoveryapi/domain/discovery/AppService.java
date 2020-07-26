@@ -4,6 +4,7 @@ import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
@@ -13,7 +14,6 @@ import javax.persistence.*;
 @Table(name = AppService.TABLE_NAME)
 @DynamicUpdate
 @Data
-@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 class AppService extends BaseEntity {
 
@@ -31,8 +31,16 @@ class AppService extends BaseEntity {
     private Long id;
 
     @Column(name = NAME_COLUMN_NAME, nullable = false, unique = true, length = 128)
+    @NonNull
     private String name;
 
     @Column(name = SERVICE_VERSION_COLUMN_NAME, nullable = false, length = 32)
+    @NonNull
     private String serviceVersion;
+
+
+    public AppService(String name, String serviceVersion) {
+        this.name = name;
+        this.serviceVersion = serviceVersion;
+    }
 }

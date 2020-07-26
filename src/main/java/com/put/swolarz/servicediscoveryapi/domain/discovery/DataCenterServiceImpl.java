@@ -6,6 +6,7 @@ import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.common.util.DtoUtils;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterDetails;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterUpdateData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -15,7 +16,7 @@ import org.springframework.stereotype.Service;
 
 
 @Service
-@ReadOnlyTransaction
+@ReadWriteTransaction
 @RequiredArgsConstructor
 class DataCenterServiceImpl implements DataCenterService {
 
@@ -23,6 +24,7 @@ class DataCenterServiceImpl implements DataCenterService {
 
 
     @Override
+    @ReadOnlyTransaction
     public ResultsPage<DataCenterDetails> getDataCenters(int page, int perPage) {
         PageRequest pageRequest = PageRequest.of(page, perPage);
         Page<DataCenter> dataCentersPage = dataCenterRepository.findAll(pageRequest);
@@ -31,6 +33,7 @@ class DataCenterServiceImpl implements DataCenterService {
     }
 
     @Override
+    @ReadOnlyTransaction
     public DataCenterDetails getDataCenter(long dataCenterId) throws DataCenterNotFoundException {
         DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
                 .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
@@ -39,7 +42,6 @@ class DataCenterServiceImpl implements DataCenterService {
     }
 
     @Override
-    @ReadWriteTransaction
     public DataCenterDetails createDataCenter(DataCenterData dataCenterData) {
         DataCenter dataCenter = dataCenterRepository.save(
                 new DataCenter(dataCenterData.getName(), dataCenterData.getLocation())
@@ -54,6 +56,18 @@ class DataCenterServiceImpl implements DataCenterService {
                 .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
 
         return toDataCenterDetails(makeDataCenterUpdate(dataCenter, dataCenterData));
+    }
+
+    @Override
+    public DataCenterDetails updateDataCenter(long dataCenterId, DataCenterUpdateData dataCenterUpdateData)
+            throws DataCenterNotFoundException {
+
+        DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
+                .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
+
+        dataCenterUpdateData.getName().ifPresent(dataCenter::setName);
+
+        return toDataCenterDetails(dataCenter);
     }
 
     @Override

@@ -5,9 +5,8 @@ import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.common.util.DtoUtils;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeData;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeUpdateDictionary;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeUpdateData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeAlreadyExistsException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -15,8 +14,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 
 @Service
@@ -45,66 +42,91 @@ class HostNodeServiceImpl implements HostNodeService {
     }
 
     @Override
-    public HostNodeDetails createHostNode(HostNodeData hostNode) throws HostNodeAlreadyExistsException, DataCenterNotFoundException {
-        Long hostNodeId = hostNode.getId();
-
-        if (hostNodeId != null && hostNodeRepository.existsById(hostNodeId)) {
-            throw new HostNodeAlreadyExistsException(hostNodeId);
-        }
-
-        DataCenter dataCenter = dataCenterRepository.findById(hostNode.getDataCenterId())
-                .orElseThrow(() -> new DataCenterNotFoundException(hostNode.getDataCenterId()));
-
-        HostStatus hostStatus = HostStatus.fromValue(hostNode.getStatus());
-
-        HostNode newHostNode = hostNodeRepository.save(
-                HostNode.builder()
-                        .id(hostNodeId)
-                        .name(hostNode.getName())
-                        .status(hostStatus)
-                        .dataCenter(dataCenter)
-                        .os(hostNode.getOperatingSystem())
-                        .build()
-        );
-
+    public HostNodeDetails createHostNode(HostNodeData hostNode) throws DataCenterNotFoundException {
+        HostNode newHostNode = hostNodeRepository.save(makeNewHostNode(hostNode));
         return toHostNodeDetails(newHostNode);
     }
 
     @Override
-    public HostNodeDetails updateHostNode(HostNodeData hostNodeDto, long hostNodeId, boolean createIfNotExists)
+    public HostNodeDetails createOrUpdateHostNode(long hostNodeId, HostNodeData hostNodeData) throws DataCenterNotFoundException {
+        HostStatus hostStatus = HostStatus.fromValue(hostNodeData.getStatus());
+        DataCenter dataCenter = dataCenterRepository.findById(hostNodeData.getDataCenterId())
+                .orElseThrow(() -> new DataCenterNotFoundException(hostNodeData.getDataCenterId()));
+
+        HostNode hostNode = hostNodeRepository.findById(hostNodeId)
+                .map(host -> {
+                    host.setName(hostNodeData.getName());
+                    host.setStatus(hostStatus);
+                    host.setDataCenter(dataCenter);
+                    host.setOs(hostNodeData.getOperatingSystem());
+
+                    return host;
+                })
+                .orElseGet(
+                        () -> hostNodeRepository.save(makeNewHostNode(hostNodeData, dataCenter))
+                );
+
+        return toHostNodeDetails(hostNode);
+    }
+
+    private HostNode makeNewHostNode(HostNodeData hostNodeData, DataCenter hostDataCenter) {
+        HostStatus hostStatus = HostStatus.fromValue(hostNodeData.getStatus());
+
+        return HostNode.builder()
+                .name(hostNodeData.getName())
+                .status(hostStatus)
+                .dataCenter(hostDataCenter)
+                .os(hostNodeData.getOperatingSystem())
+                .build();
+    }
+
+    private HostNode makeNewHostNode(HostNodeData hostNodeData) throws DataCenterNotFoundException {
+        DataCenter dataCenter = dataCenterRepository.findById(hostNodeData.getDataCenterId())
+                .orElseThrow(() -> new DataCenterNotFoundException(hostNodeData.getDataCenterId()));
+
+        return makeNewHostNode(hostNodeData, dataCenter);
+    }
+
+    @Override
+    public HostNodeDetails updateHostNode(long hostNodeId, HostNodeData hostNodeData)
             throws HostNodeNotFoundException, DataCenterNotFoundException {
 
-        Optional<HostNode> optionalHostNode = hostNodeRepository.findById(hostNodeId);
+        HostNode hostNode = hostNodeRepository.findById(hostNodeId)
+                .orElseThrow(() -> new HostNodeNotFoundException(hostNodeId));
 
-        if (optionalHostNode.isEmpty()) {
-            if (!createIfNotExists)
-                throw new HostNodeNotFoundException(hostNodeId);
-
-            try {
-                return createHostNode(hostNodeDto.toBuilder().id(hostNodeId).build());
-            }
-            catch (HostNodeAlreadyExistsException e) {
-                // Such situation should never happen, since we check for the existence of the host node
-                throw new IllegalStateException("Race condition! The host node was supposed to be non existent");
-            }
-        }
-
-        DataCenter dataCenter = dataCenterRepository.findById(hostNodeDto.getDataCenterId())
-                .orElseThrow(() -> new DataCenterNotFoundException(hostNodeDto.getDataCenterId()));
-
-        HostNode hostNode = optionalHostNode.get();
-
-        hostNode.setName(hostNodeDto.getName());
-        hostNode.setStatus(HostStatus.fromValue(hostNodeDto.getStatus()));
-        hostNode.setDataCenter(dataCenter);
-        hostNode.setOs(hostNodeDto.getOperatingSystem());
+        hostNode.setName(hostNodeData.getName());
+        hostNode.setStatus(HostStatus.fromValue(hostNodeData.getStatus()));
+        hostNode.setOs(hostNodeData.getOperatingSystem());
+        updateHostDataCenter(hostNode, hostNodeData.getDataCenterId());
 
         return toHostNodeDetails(hostNode);
     }
 
     @Override
-    public HostNodeDetails updateHostNode(long hostNodeId, HostNodeUpdateDictionary updateAttributes) {
-        throw new UnsupportedOperationException("Not implemented");
+    public HostNodeDetails updateHostNode(long hostNodeId, HostNodeUpdateData updateAttributes)
+            throws HostNodeNotFoundException, DataCenterNotFoundException {
+
+        HostNode hostNode = hostNodeRepository.findById(hostNodeId)
+                .orElseThrow(() -> new HostNodeNotFoundException(hostNodeId));
+
+        updateAttributes.getName().ifPresent(hostNode::setName);
+        updateAttributes.getStatus().map(HostStatus::fromValue).ifPresent(hostNode::setStatus);
+        updateAttributes.getOperatingSystem().ifPresent(hostNode::setOs);
+
+        if (updateAttributes.getDataCenterId().isPresent()) {
+            updateHostDataCenter(hostNode, updateAttributes.getDataCenterId().get());
+        }
+
+        return toHostNodeDetails(hostNode);
+    }
+
+    private void updateHostDataCenter(HostNode hostNode, long newDataCenterId) throws DataCenterNotFoundException {
+        if (!hostNode.getDataCenter().getId().equals(newDataCenterId)) {
+            DataCenter dataCenter = dataCenterRepository.findById(newDataCenterId)
+                    .orElseThrow(() -> new DataCenterNotFoundException(newDataCenterId));
+
+            hostNode.setDataCenter(dataCenter);
+        }
     }
 
     @Override

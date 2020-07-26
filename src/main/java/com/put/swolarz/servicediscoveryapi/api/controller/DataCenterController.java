@@ -5,11 +5,10 @@ import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessExcep
 import com.put.swolarz.servicediscoveryapi.domain.discovery.DataCenterService;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterDetails;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterUpdateData;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 
 @RestController
@@ -35,14 +34,33 @@ class DataCenterController {
     }
 
     @PostMapping
-    public ResponseEntity<DataCenterDetails> postDataCenter(@RequestBody DataCenterData dataCenter) throws BusinessException {
-        DataCenterDetails createdDataCenter = dataCenterService.createDataCenter(dataCenter);
+    public ResponseEntity<DataCenterDetails> postDataCenter(@RequestBody DataCenterData dataCenterData) {
+        DataCenterDetails createdDataCenter = dataCenterService.createDataCenter(dataCenterData);
         return ResponseEntity.ok(createdDataCenter);
     }
 
+    @PostMapping("/{dataCenterId}")
+    public ResponseEntity<DataCenterDetails> postDataCenterWithId(@PathVariable("dataCenterId") long dataCenterId,
+                                                                  @RequestBody DataCenterData dataCenterData) throws BusinessException {
+
+        DataCenterDetails updatedDataCenter = dataCenterService.updateDataCenter(dataCenterId, dataCenterData);
+        return ResponseEntity.ok(updatedDataCenter);
+    }
+
+    @PutMapping("/{dataCenterId}")
+    public ResponseEntity<DataCenterDetails> putDataCenter(@PathVariable("dataCenterId") long dataCenterId,
+                                                           @RequestBody DataCenterData dataCenterData) {
+
+        DataCenterDetails dataCenter = dataCenterService.createOrUpdateDataCenter(dataCenterId, dataCenterData);
+        return ResponseEntity.ok(dataCenter);
+    }
+
     @PatchMapping("/{dataCenterId}")
-    public ResponseEntity<DataCenterDetails> patchDataCenter(@RequestBody Map<String, String> updateDictionary) throws BusinessException {
-        throw new UnsupportedOperationException("Not implemented");
+    public ResponseEntity<DataCenterDetails> patchDataCenter(@PathVariable("dataCenterId") long dataCenterId,
+                                                             @RequestBody DataCenterUpdateData updateData) throws BusinessException {
+
+        DataCenterDetails updatedDataCenter = dataCenterService.updateDataCenter(dataCenterId, updateData);
+        return ResponseEntity.ok(updatedDataCenter);
     }
 
     @DeleteMapping("/{dataCenterId}")

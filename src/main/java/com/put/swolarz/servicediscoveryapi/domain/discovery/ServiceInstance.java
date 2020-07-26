@@ -33,10 +33,12 @@ class ServiceInstance extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = SERVICE_COLUMN_NAME, nullable = false)
+    @NonNull
     private AppService service;
 
     @ManyToOne
     @JoinColumn(name = HOST_COLUMN_NAME, nullable = false)
+    @NonNull
     private HostNode host;
 
     @Column(name = PORT_COLUMN_NAME, nullable = false)

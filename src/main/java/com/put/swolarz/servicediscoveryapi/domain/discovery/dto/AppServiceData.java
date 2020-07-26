@@ -4,12 +4,17 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 
+import javax.validation.constraints.NotNull;
+
 
 @Data
 @Builder
 @AllArgsConstructor
 public class AppServiceData {
-    private Long id;
+
+    @NotNull
     private String name;
+
+    @NotNull
     private String serviceVersion;
 }
