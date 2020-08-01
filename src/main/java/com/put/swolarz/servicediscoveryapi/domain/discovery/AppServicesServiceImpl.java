@@ -3,25 +3,32 @@ package com.put.swolarz.servicediscoveryapi.domain.discovery;
 import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadOnlyTransaction;
 import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadWriteTransaction;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
+import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.common.util.DtoUtils;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostPortAlreadyInUse;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.ServiceInstanceNotFoundException;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
 @Service
 @ReadWriteTransaction
 @RequiredArgsConstructor
+@Slf4j
 class AppServicesServiceImpl implements AppServicesService {
 
     private final AppServiceRepository appServiceRepository;
@@ -59,7 +66,9 @@ class AppServicesServiceImpl implements AppServicesService {
 
     @Override
     @ReadOnlyTransaction
-    public ResultsPage<ServiceInstanceDetails> getAppServiceInstances(long appServiceId, int page, int perPage) throws AppServiceNotFoundException {
+    public ResultsPage<ServiceInstanceDetails> getAppServiceInstances(long appServiceId, int page, int perPage)
+            throws AppServiceNotFoundException {
+
         appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
 
@@ -71,7 +80,9 @@ class AppServicesServiceImpl implements AppServicesService {
 
     @Override
     @ReadOnlyTransaction
-    public ServiceInstanceDetails getAppServiceInstance(long appServiceId, long serviceInstanceId) throws AppServiceNotFoundException, ServiceInstanceNotFoundException {
+    public ServiceInstanceDetails getAppServiceInstance(long appServiceId, long serviceInstanceId)
+            throws AppServiceNotFoundException, ServiceInstanceNotFoundException {
+
         appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
 
@@ -83,7 +94,7 @@ class AppServicesServiceImpl implements AppServicesService {
 
     @Override
     public ServiceInstanceDetails addAppServiceInstance(ServiceInstanceData serviceInstanceData)
-            throws AppServiceNotFoundException, HostNodeNotFoundException {
+            throws AppServiceNotFoundException, HostNodeNotFoundException, HostPortAlreadyInUse {
 
         try {
             AppService service = appServiceRepository.findById(serviceInstanceData.getAppServiceId())
@@ -99,11 +110,11 @@ class AppServicesServiceImpl implements AppServicesService {
             return toServiceInstanceDetails(instance);
         }
         catch (DataIntegrityViolationException e) {
-            if (!appServiceRepository.existsById(serviceInstanceData.getAppServiceId()))
-                throw new AppServiceNotFoundException(serviceInstanceData.getAppServiceId());
+            long hostId = serviceInstanceData.getHostNodeId();
+            int port = serviceInstanceData.getPort();
 
-            if (!hostNodeRepository.existsById(serviceInstanceData.getHostNodeId()))
-                throw new HostNodeNotFoundException(serviceInstanceData.getHostNodeId());
+            if (serviceInstanceRepository.existsByHostIdAndPort(hostId, port))
+                throw new HostPortAlreadyInUse(hostId, port, e);
 
             throw new RuntimeException("Unexpected service instance creation error", e);
         }
@@ -175,7 +186,7 @@ class AppServicesServiceImpl implements AppServicesService {
     @Override
     public void removeAppService(long appServiceId) throws AppServiceNotFoundException {
         try {
-            appServiceRepository.deleteAllInBatch();
+            appServiceRepository.deleteById(appServiceId);
         }
         catch (EmptyResultDataAccessException e) {
             throw new AppServiceNotFoundException(appServiceId, e);
@@ -228,5 +239,80 @@ class AppServicesServiceImpl implements AppServicesService {
                 .status(serviceInstance.getStatus().getValue())
                 .startedAt(serviceInstance.getStartedAt())
                 .build();
+    }
+
+    @Override
+    public ServiceScaleResult scaleService(long appServiceId, int replication) throws AppServiceNotFoundException {
+        if (!appServiceRepository.existsById(appServiceId))
+            throw new AppServiceNotFoundException(appServiceId);
+
+        long instancesCount = serviceInstanceRepository.countByServiceId(appServiceId);
+
+        if (instancesCount < replication) {
+            int toLaunch = (int) (replication - instancesCount);
+            scaleServiceUp(appServiceId, toLaunch);
+
+            return ServiceScaleResult.builder()
+                    .startedInstances(replication - instancesCount)
+                    .removedInstances(0)
+                    .build();
+        }
+
+        scaleServiceDown(appServiceId, replication);
+        return ServiceScaleResult.builder()
+                .startedInstances(0)
+                .removedInstances(instancesCount - replication)
+                .build();
+    }
+
+    private void scaleServiceUp(long appServiceId, int toLaunchNum) {
+        List<HostNode>  hostNodes = hostNodeRepository.findLoadBalancedRepositories(PageRequest.of(0, toLaunchNum));
+        Map<Long, HostPortResolver> portResolvers = hostNodes.stream()
+                .collect(Collectors.toMap(
+                        HostNode::getId,
+                        host -> new HostPortResolver(host.getUsedPorts())
+                ));
+
+        int launched = 0;
+
+        while (launched < toLaunchNum) {
+            if (hostNodes.isEmpty())
+                throw new IllegalStateException("Failed to replicate service. Not enough number of available ports");
+
+            List<HostNode> toRemove = new ArrayList<>();
+
+            for (HostNode host : hostNodes) {
+                HostPortResolver portResolver = portResolvers.get(host.getId());
+
+                try {
+                    int port = portResolver.resolveUnusedPort(host);
+                    addAppServiceInstance(
+                            ServiceInstanceData.builder()
+                                    .appServiceId(appServiceId)
+                                    .hostNodeId(host.getId())
+                                    .port(port)
+                                    .build()
+                    );
+
+                    launched++;
+                }
+                catch (BusinessException e) {
+                    log.warn("Unexpected business exception when adding new service instance", e);
+                }
+                catch (IllegalStateException e) {
+                    // Port resolver failed to find an unused port
+                    toRemove.add(host);
+                }
+            }
+
+            hostNodes.removeAll(toRemove);
+        }
+    }
+
+    private void scaleServiceDown(long appServiceId, int replication) {
+        serviceInstanceRepository.deleteInBatch(
+                serviceInstanceRepository.findAllByServiceId(appServiceId)
+                        .skip(replication).collect(Collectors.toList())
+        );
     }
 }

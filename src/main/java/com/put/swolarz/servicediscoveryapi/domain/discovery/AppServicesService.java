@@ -5,6 +5,7 @@ import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostPortAlreadyInUse;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.ServiceInstanceNotFoundException;
 
 
@@ -18,7 +19,7 @@ public interface AppServicesService {
         throws AppServiceNotFoundException, ServiceInstanceNotFoundException;
 
     ServiceInstanceDetails addAppServiceInstance(ServiceInstanceData serviceInstanceData)
-            throws AppServiceNotFoundException, HostNodeNotFoundException;
+            throws AppServiceNotFoundException, HostNodeNotFoundException, HostPortAlreadyInUse;
 
     void removeAppServiceInstance(long serviceInstanceId, long appServiceId)
             throws AppServiceNotFoundException, ServiceInstanceNotFoundException;
@@ -29,4 +30,6 @@ public interface AppServicesService {
     AppServiceDetails createOrUpdateAppService(long appServiceId, AppServiceData appService);
 
     void removeAppService(long appServiceId) throws AppServiceNotFoundException;
+
+    ServiceScaleResult scaleService(long appServiceId, int replication) throws AppServiceNotFoundException;
 }

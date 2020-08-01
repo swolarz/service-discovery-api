@@ -10,8 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 
 @RestController
 @RequestMapping("/api/hosts")
@@ -60,7 +58,7 @@ class HostNodeController {
         return ResponseEntity.ok(updatedHostNode);
     }
 
-    @PatchMapping("/hosts/{hostId}")
+    @PatchMapping("/{hostId}")
     public ResponseEntity<HostNodeDetails> patchHostNode(@PathVariable("hostId") long hostId,
                                                          @RequestBody HostNodeUpdateData updateData) throws BusinessException {
 
@@ -68,7 +66,7 @@ class HostNodeController {
         return ResponseEntity.ok(updatedHostNode);
     }
 
-    @DeleteMapping("/hosts/{hostId}")
+    @DeleteMapping("/{hostId}")
     public ResponseEntity<Long> deleteHostNode(@PathVariable("hostId") long hostId) throws BusinessException {
         hostNodeService.removeHostNode(hostId);
         return ResponseEntity.ok().build();

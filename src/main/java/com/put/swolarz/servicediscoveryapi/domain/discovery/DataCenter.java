@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.util.Set;
 
 
 @Entity
@@ -36,6 +37,9 @@ class DataCenter extends BaseEntity {
     @Column(name = LOCATION_COLUMN_NAME, nullable = false)
     @NonNull
     private final String location;
+
+    @OneToMany(mappedBy = "dataCenter", cascade = { CascadeType.REMOVE })
+    private Set<HostNode> hosts;
 
 
     public DataCenter(String name, String location) {

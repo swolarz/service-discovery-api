@@ -8,6 +8,7 @@ import lombok.NonNull;
 import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
+import java.util.Set;
 
 
 @Entity
@@ -37,6 +38,9 @@ class AppService extends BaseEntity {
     @Column(name = SERVICE_VERSION_COLUMN_NAME, nullable = false, length = 32)
     @NonNull
     private String serviceVersion;
+
+    @OneToMany(mappedBy = "service", cascade = { CascadeType.REMOVE })
+    private Set<ServiceInstance> instances;
 
 
     public AppService(String name, String serviceVersion) {

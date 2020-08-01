@@ -6,7 +6,9 @@ import org.hibernate.annotations.DynamicUpdate;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 
 @Entity
@@ -57,8 +59,9 @@ class HostNode extends BaseEntity {
     @NonNull
     private String os;
 
-    @OneToMany(mappedBy = "host")
+    @OneToMany(mappedBy = "host", cascade = { CascadeType.REMOVE })
     private Set<ServiceInstance> instances;
+
 
     @Builder
     public HostNode(Long id, String name, HostStatus status, DataCenter dataCenter, String os) {
@@ -74,9 +77,19 @@ class HostNode extends BaseEntity {
     public void setStatus(HostStatus status) {
         this.status = status;
         this.launchedAt = resolveLaunchedTime(status);
+
+        updateInstancesStatus(status);
+    }
+
+    private void updateInstancesStatus(HostStatus newStatus) {
+        instances.forEach(instance -> instance.onHostStatusChanged(newStatus));
     }
 
     private static LocalDateTime resolveLaunchedTime(HostStatus hostStatus) {
         return (hostStatus.equals(HostStatus.UP) ? LocalDateTime.now() : null);
+    }
+
+    public List<Integer> getUsedPorts() {
+        return instances.stream().map(ServiceInstance::getPort).collect(Collectors.toList());
     }
 }

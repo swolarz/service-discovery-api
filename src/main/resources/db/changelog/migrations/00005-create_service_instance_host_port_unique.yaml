@@ -1,0 +1,12 @@
+databaseChangeLog:
+  - changeSet:
+      id: 00005-1
+      author: swolarz
+      comment: Create unique constraint for service instance port on the same hosts
+      changes:
+        - addUniqueConstraint:
+            constraintName: service_instance_host_port_uniq
+            tableName: SERVICE_INSTANCE
+            columnNames: HOST_ID, PORT
+            clustered: true
+            validate: true

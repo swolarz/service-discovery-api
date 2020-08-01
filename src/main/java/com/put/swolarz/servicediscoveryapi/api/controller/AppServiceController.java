@@ -106,4 +106,16 @@ class AppServiceController {
         appServicesService.removeAppService(appServiceId);
         return ResponseEntity.ok(appServiceId);
     }
+
+    @PostMapping("/{appServiceId}/scale")
+    public ResponseEntity<ServiceScaleResult> scaleAppService(@PathVariable("appServiceId") long appServiceId,
+                                                              @RequestParam(name = "replication") int replication)
+            throws BusinessException {
+
+        if (replication > 100)
+            throw new IllegalArgumentException("Replication factor must not exceed 1000");
+
+        ServiceScaleResult result = appServicesService.scaleService(appServiceId, replication);
+        return ResponseEntity.ok(result);
+    }
 }

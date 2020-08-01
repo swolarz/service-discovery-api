@@ -22,4 +22,6 @@ public class HostNodeDetails {
     private String dataCenterName;
 
     private String operatingSystem;
+
+    private int launchedInstances;
 }

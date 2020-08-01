@@ -9,7 +9,17 @@ import java.time.LocalDateTime;
 
 
 @Entity
-@Table(name = ServiceInstance.TABLE_NAME)
+@Table(
+        name = ServiceInstance.TABLE_NAME,
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        columnNames = {
+                                ServiceInstance.HOST_COLUMN_NAME,
+                                ServiceInstance.PORT_COLUMN_NAME
+                        }
+                )
+        }
+)
 @DynamicUpdate
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -59,7 +69,44 @@ class ServiceInstance extends BaseEntity {
         this.host = host;
         this.port = port;
 
+        this.status = resolveByHostStatus(host.getStatus());
+        this.startedAt = resolveStartTime(status, InstanceStatus.STOPPED);
+
         this.status = InstanceStatus.RUNNING;
         this.startedAt = LocalDateTime.now();
+    }
+
+    public void onHostStatusChanged(HostStatus newHostStatus) {
+        setStatus(resolveByHostStatus(newHostStatus));
+    }
+
+    public void setStatus(InstanceStatus status) {
+        InstanceStatus prevStatus = this.status;
+
+        this.status = status;
+        this.startedAt = resolveStartTime(status, prevStatus);
+    }
+
+    private LocalDateTime resolveStartTime(InstanceStatus status, InstanceStatus prevStatus) {
+        if (status.equals(InstanceStatus.STOPPED))
+            return null;
+
+        return LocalDateTime.now();
+    }
+
+    private InstanceStatus resolveByHostStatus(@NonNull HostStatus hostStatus) {
+        switch (hostStatus) {
+            case UP:
+                return InstanceStatus.RUNNING;
+
+            case DOWN:
+                return InstanceStatus.STOPPED;
+
+            case RESTARTING:
+                return InstanceStatus.STARTING;
+
+            default:
+                throw new IllegalArgumentException(String.format("Invalid host status: %s", hostStatus));
+        }
     }
 }

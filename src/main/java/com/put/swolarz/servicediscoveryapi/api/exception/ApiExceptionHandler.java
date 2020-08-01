@@ -21,9 +21,6 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         log.warn("Caught a handled business exception", e);
 
         switch (e.getCode()) {
-            case INVALID_PAGE_REQUESTED:
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(makeErrorResponse(e.getMessage()));
-
             default:
                 log.error("Caught unexpected business exception: {}", e.getMessage());
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

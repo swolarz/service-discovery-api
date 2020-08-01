@@ -8,9 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class ServiceInstanceData {
-
-    private long appServiceId;
-    private long hostNodeId;
-    private int port;
+public class ServiceScaleResult {
+    private long startedInstances;
+    private long removedInstances;
 }
