@@ -11,6 +11,7 @@ import java.util.Optional;
 public class AppServiceUpdateData {
     private Optional<String> name;
     private Optional<String> serviceVersion;
+    private String dataVersionToken;
 
     public AppServiceUpdateData() {
         this.name = Optional.empty();

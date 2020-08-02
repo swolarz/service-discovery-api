@@ -17,4 +17,7 @@ public class AppServiceData {
 
     @NotNull
     private String serviceVersion;
+
+    @NotNull
+    private String dataVersionToken;
 }

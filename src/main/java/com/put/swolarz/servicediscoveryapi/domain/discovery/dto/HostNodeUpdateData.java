@@ -16,6 +16,8 @@ public class HostNodeUpdateData {
 
     private Optional<String> operatingSystem;
 
+    private String dataVersionToken;
+
     public HostNodeUpdateData() {
         this.name = Optional.empty();
         this.status = Optional.empty();

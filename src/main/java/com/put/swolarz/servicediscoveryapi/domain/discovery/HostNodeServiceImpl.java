@@ -8,6 +8,7 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeUpdateData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
+import com.put.swolarz.servicediscoveryapi.domain.websync.OptimisticVersionHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
@@ -24,6 +25,8 @@ class HostNodeServiceImpl implements HostNodeService {
     private final HostNodeRepository hostNodeRepository;
     private final DataCenterRepository dataCenterRepository;
     private final ServiceInstanceRepository serviceInstanceRepository;
+
+    private final OptimisticVersionHolder versionHolder;
 
 
     @Override
@@ -56,6 +59,8 @@ class HostNodeServiceImpl implements HostNodeService {
 
         HostNode hostNode = hostNodeRepository.findById(hostNodeId)
                 .map(host -> {
+                    EntityVersionUtils.validateEntityVersion(host, hostNodeData.getDataVersionToken(), versionHolder);
+
                     host.setName(hostNodeData.getName());
                     host.setStatus(hostStatus);
                     host.setDataCenter(dataCenter);
@@ -95,6 +100,8 @@ class HostNodeServiceImpl implements HostNodeService {
         HostNode hostNode = hostNodeRepository.findById(hostNodeId)
                 .orElseThrow(() -> new HostNodeNotFoundException(hostNodeId));
 
+        EntityVersionUtils.validateEntityVersion(hostNode, hostNodeData.getDataVersionToken(), versionHolder);
+
         hostNode.setName(hostNodeData.getName());
         hostNode.setStatus(HostStatus.fromValue(hostNodeData.getStatus()));
         hostNode.setOs(hostNodeData.getOperatingSystem());
@@ -109,6 +116,8 @@ class HostNodeServiceImpl implements HostNodeService {
 
         HostNode hostNode = hostNodeRepository.findById(hostNodeId)
                 .orElseThrow(() -> new HostNodeNotFoundException(hostNodeId));
+
+        EntityVersionUtils.validateEntityVersion(hostNode, updateAttributes.getDataVersionToken(), versionHolder);
 
         updateAttributes.getName().ifPresent(hostNode::setName);
         updateAttributes.getStatus().map(HostStatus::fromValue).ifPresent(hostNode::setStatus);

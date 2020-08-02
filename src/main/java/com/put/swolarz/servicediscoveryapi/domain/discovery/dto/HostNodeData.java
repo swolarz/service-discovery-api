@@ -20,4 +20,7 @@ public class HostNodeData {
     private String operatingSystem;
 
     private long dataCenterId;
+
+    @NotNull
+    private String dataVersionToken;
 }

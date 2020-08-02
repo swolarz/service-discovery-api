@@ -15,8 +15,11 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/datacenter")
 @RequiredArgsConstructor
 class DataCenterController {
+    private static final String POE_TOKEN_HEADER = PostOnceExactlyHandler.POE_HEADER;
 
     private final DataCenterService dataCenterService;
+    private final PostOnceExactlyHandler postOnceExactlyHandler;
+
 
     @GetMapping
     public ResponseEntity<ResultsPage<DataCenterDetails>> getDataCenters(
@@ -34,7 +37,11 @@ class DataCenterController {
     }
 
     @PostMapping
-    public ResponseEntity<DataCenterDetails> postDataCenter(@RequestBody DataCenterData dataCenterData) {
+    public ResponseEntity<DataCenterDetails> postDataCenter(@RequestBody DataCenterData dataCenterData,
+                                                            @RequestHeader(POE_TOKEN_HEADER) String poeToken) {
+
+        postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
+
         DataCenterDetails createdDataCenter = dataCenterService.createDataCenter(dataCenterData);
         return ResponseEntity.ok(createdDataCenter);
     }

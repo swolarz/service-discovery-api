@@ -24,4 +24,6 @@ public class HostNodeDetails {
     private String operatingSystem;
 
     private int launchedInstances;
+
+    private String dataVersionToken;
 }

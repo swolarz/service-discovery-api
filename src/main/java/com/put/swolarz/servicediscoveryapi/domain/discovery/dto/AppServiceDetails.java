@@ -16,4 +16,6 @@ public class AppServiceDetails {
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private AppServiceInstancesInfo instancesInfo;
+
+    private String dataVersionToken;
 }

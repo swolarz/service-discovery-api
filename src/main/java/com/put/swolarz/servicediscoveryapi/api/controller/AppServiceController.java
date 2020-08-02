@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/services")
 @RequiredArgsConstructor
 class AppServiceController {
+    private static final String POE_TOKEN_HEADER = PostOnceExactlyHandler.POE_HEADER;
 
     private final AppServicesService appServicesService;
+    private final PostOnceExactlyHandler postOnceExactlyHandler;
 
 
     @GetMapping
@@ -53,8 +55,11 @@ class AppServiceController {
 
     @PostMapping("/{appServiceId}/instances")
     public ResponseEntity<ServiceInstanceDetails> postAppServiceInstance(@PathVariable("appServiceId") long appServiceId,
-                                                                         @RequestBody ServiceInstanceData serviceInstanceData)
-        throws BusinessException {
+                                                                         @RequestBody ServiceInstanceData serviceInstanceData,
+                                                                         @RequestHeader(POE_TOKEN_HEADER) String poeToken)
+            throws BusinessException {
+
+        postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
 
         serviceInstanceData.setAppServiceId(appServiceId);
         ServiceInstanceDetails serviceInstance = appServicesService.addAppServiceInstance(serviceInstanceData);
@@ -71,7 +76,9 @@ class AppServiceController {
     }
 
     @PostMapping
-    public ResponseEntity<AppServiceDetails> postAppService(@RequestBody AppServiceData appService) {
+    public ResponseEntity<AppServiceDetails> postAppService(@RequestBody AppServiceData appService,
+                                                            @RequestHeader(POE_TOKEN_HEADER) String poeToken) {
+        postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
 
         AppServiceDetails appServiceDetails = appServicesService.createAppService(appService);
         return ResponseEntity.ok(appServiceDetails);

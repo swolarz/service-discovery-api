@@ -10,6 +10,7 @@ import java.util.Optional;
 @Getter
 public class DataCenterUpdateData {
     private Optional<String> name;
+    private String dataVersionToken;
 
     public DataCenterUpdateData() {
         this.name = Optional.empty();

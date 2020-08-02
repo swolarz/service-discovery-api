@@ -8,6 +8,7 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterUpdateData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
+import com.put.swolarz.servicediscoveryapi.domain.websync.OptimisticVersionHolder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Service;
 class DataCenterServiceImpl implements DataCenterService {
 
     private final DataCenterRepository dataCenterRepository;
+    private final OptimisticVersionHolder versionHolder;
 
 
     @Override
@@ -65,6 +67,8 @@ class DataCenterServiceImpl implements DataCenterService {
         DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
                 .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
 
+        EntityVersionUtils.validateEntityVersion(dataCenter, dataCenterUpdateData.getDataVersionToken(), versionHolder);
+
         dataCenterUpdateData.getName().ifPresent(dataCenter::setName);
 
         return toDataCenterDetails(dataCenter);
@@ -84,6 +88,8 @@ class DataCenterServiceImpl implements DataCenterService {
     }
 
     private DataCenter makeDataCenterUpdate(DataCenter dataCenter, DataCenterData dataCenterData) {
+        EntityVersionUtils.validateEntityVersion(dataCenter, dataCenterData.getDataVersionToken(), versionHolder);
+
         dataCenter.setName(dataCenterData.getName());
         dataCenter.setLocation(dataCenterData.getLocation());
 
@@ -101,10 +107,13 @@ class DataCenterServiceImpl implements DataCenterService {
     }
 
     private DataCenterDetails toDataCenterDetails(DataCenter dataCenter) {
+        String versionToken = versionHolder.storeVersionForUpdate(dataCenter.getVersion());
+
         return DataCenterDetails.builder()
                 .id(dataCenter.getId())
                 .name(dataCenter.getName())
                 .location(dataCenter.getLocation())
+                .dataVersionToken(versionToken)
                 .build();
     }
 }

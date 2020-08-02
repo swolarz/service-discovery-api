@@ -15,8 +15,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/hosts")
 @RequiredArgsConstructor
 class HostNodeController {
+    private static final String POE_TOKEN_HEADER = PostOnceExactlyHandler.POE_HEADER;
 
     private final HostNodeService hostNodeService;
+    private final PostOnceExactlyHandler postOnceExactlyHandler;
 
 
     @GetMapping
@@ -36,7 +38,10 @@ class HostNodeController {
     }
 
     @PostMapping
-    public ResponseEntity<HostNodeDetails> postHostNode(@RequestBody HostNodeData hostNode) throws BusinessException {
+    public ResponseEntity<HostNodeDetails> postHostNode(@RequestBody HostNodeData hostNode,
+                                                        @RequestHeader(POE_TOKEN_HEADER) String poeToken) throws BusinessException {
+
+        postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
 
         HostNodeDetails newHostNode = hostNodeService.createHostNode(hostNode);
         return ResponseEntity.ok(newHostNode);

@@ -10,6 +10,7 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppService
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostPortAlreadyInUse;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.ServiceInstanceNotFoundException;
+import com.put.swolarz.servicediscoveryapi.domain.websync.OptimisticVersionHolder;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,8 @@ class AppServicesServiceImpl implements AppServicesService {
     private final AppServiceRepository appServiceRepository;
     private final ServiceInstanceRepository serviceInstanceRepository;
     private final HostNodeRepository hostNodeRepository;
+
+    private final OptimisticVersionHolder versionHolder;
 
 
     @Override
@@ -148,6 +151,8 @@ class AppServicesServiceImpl implements AppServicesService {
     public AppServiceDetails createOrUpdateAppService(long appServiceId, AppServiceData appServiceData) {
         AppService appService = appServiceRepository.findById(appServiceId)
                 .map(service -> {
+                    EntityVersionUtils.validateEntityVersion(service, appServiceData.getDataVersionToken(), versionHolder);
+
                     service.setName(appServiceData.getName());
                     service.setServiceVersion(appServiceData.getServiceVersion());
 
@@ -166,6 +171,8 @@ class AppServicesServiceImpl implements AppServicesService {
         AppService appService = appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
 
+        EntityVersionUtils.validateEntityVersion(appService, appServiceData.getDataVersionToken(), versionHolder);
+
         appService.setName(appServiceData.getName());
         appService.setServiceVersion(appServiceData.getServiceVersion());
 
@@ -176,6 +183,8 @@ class AppServicesServiceImpl implements AppServicesService {
     public AppServiceDetails updateAppService(long appServiceId, AppServiceUpdateData updateData) throws AppServiceNotFoundException {
         AppService appService = appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
+
+        EntityVersionUtils.validateEntityVersion(appService, updateData.getDataVersionToken(), versionHolder);
 
         updateData.getName().ifPresent(appService::setName);
         updateData.getServiceVersion().ifPresent(appService::setServiceVersion);
@@ -198,10 +207,13 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     private AppServiceDetails toAppServiceDetails(AppService appService, Page<ServiceInstance> topInstances) {
+        String versionToken = versionHolder.storeVersionForUpdate(appService.getVersion());
+
         AppServiceDetails.AppServiceDetailsBuilder appServiceBuilder = AppServiceDetails.builder()
                 .id(appService.getId())
                 .name(appService.getName())
-                .serviceVersion(appService.getServiceVersion());
+                .serviceVersion(appService.getServiceVersion())
+                .dataVersionToken(versionToken);
 
         if (topInstances != null) {
             appServiceBuilder = appServiceBuilder.instancesInfo(
