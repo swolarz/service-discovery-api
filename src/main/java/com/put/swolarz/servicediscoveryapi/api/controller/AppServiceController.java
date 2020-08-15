@@ -57,7 +57,7 @@ class AppServiceController {
     public ResponseEntity<ServiceInstanceDetails> postAppServiceInstance(@PathVariable("appServiceId") long appServiceId,
                                                                          @RequestBody ServiceInstanceData serviceInstanceData,
                                                                          @RequestHeader(POE_TOKEN_HEADER) String poeToken)
-            throws BusinessException {
+            throws BusinessException, PostOnceExactlyException {
 
         postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
 
@@ -77,7 +77,9 @@ class AppServiceController {
 
     @PostMapping
     public ResponseEntity<AppServiceDetails> postAppService(@RequestBody AppServiceData appService,
-                                                            @RequestHeader(POE_TOKEN_HEADER) String poeToken) {
+                                                            @RequestHeader(POE_TOKEN_HEADER) String poeToken)
+            throws PostOnceExactlyException {
+
         postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
 
         AppServiceDetails appServiceDetails = appServicesService.createAppService(appService);
@@ -119,8 +121,11 @@ class AppServiceController {
                                                               @RequestParam(name = "replication") int replication)
             throws BusinessException {
 
+        if (replication < 0)
+            throw new IllegalArgumentException("Not appropriate replication factor value");
+
         if (replication > 100)
-            throw new IllegalArgumentException("Replication factor must not exceed 1000");
+            throw new IllegalArgumentException("Replication factor must not exceed 100");
 
         ServiceScaleResult result = appServicesService.scaleService(appServiceId, replication);
         return ResponseEntity.ok(result);

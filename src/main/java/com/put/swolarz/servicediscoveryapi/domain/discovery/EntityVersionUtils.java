@@ -11,7 +11,6 @@ import javax.persistence.OptimisticLockException;
 class EntityVersionUtils {
 
     public void validateEntityVersion(BaseEntity entity, String versionToken, OptimisticVersionHolder versionHolder) {
-
         Long version = versionHolder.restoreVersionForUpdate(versionToken);
 
         if (version == null || !version.equals(entity.getVersion()))

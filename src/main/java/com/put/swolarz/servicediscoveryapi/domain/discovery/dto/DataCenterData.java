@@ -16,6 +16,5 @@ public class DataCenterData {
     @NotNull
     private String location;
 
-    @NotNull
     private String dataVersionToken;
 }

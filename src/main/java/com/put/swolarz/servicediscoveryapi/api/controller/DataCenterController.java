@@ -38,7 +38,8 @@ class DataCenterController {
 
     @PostMapping
     public ResponseEntity<DataCenterDetails> postDataCenter(@RequestBody DataCenterData dataCenterData,
-                                                            @RequestHeader(POE_TOKEN_HEADER) String poeToken) {
+                                                            @RequestHeader(POE_TOKEN_HEADER) String poeToken)
+            throws PostOnceExactlyException {
 
         postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
 

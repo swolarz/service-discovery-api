@@ -39,7 +39,8 @@ class HostNodeController {
 
     @PostMapping
     public ResponseEntity<HostNodeDetails> postHostNode(@RequestBody HostNodeData hostNode,
-                                                        @RequestHeader(POE_TOKEN_HEADER) String poeToken) throws BusinessException {
+                                                        @RequestHeader(POE_TOKEN_HEADER) String poeToken)
+            throws BusinessException, PostOnceExactlyException {
 
         postOnceExactlyHandler.ensurePostOnceExactly(poeToken);
 

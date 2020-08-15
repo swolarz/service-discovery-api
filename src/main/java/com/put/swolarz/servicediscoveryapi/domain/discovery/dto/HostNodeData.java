@@ -21,6 +21,5 @@ public class HostNodeData {
 
     private long dataCenterId;
 
-    @NotNull
     private String dataVersionToken;
 }

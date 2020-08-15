@@ -12,9 +12,8 @@ class PostOnceExactlyHandler {
 
     private final PostRequestsCache postRequestsCache;
 
-    public void ensurePostOnceExactly(String poeToken) {
+    public void ensurePostOnceExactly(String poeToken) throws PostOnceExactlyException {
         if (!postRequestsCache.acceptRequest(poeToken))
-            // Todo
-            throw new IllegalArgumentException(String.format("Duplicate POST request: %s", poeToken));
+            throw new PostOnceExactlyException(poeToken);
     }
 }

@@ -1,22 +1,19 @@
-package com.put.swolarz.servicediscoveryapi.domain.discovery.dto;
+package com.put.swolarz.servicediscoveryapi.api.controller;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-import javax.validation.constraints.NotNull;
 
 
 @Data
 @Builder
 @AllArgsConstructor
-public class AppServiceData {
+public class AppServiceRequest {
 
-    @NotNull
     private String name;
-
-    @NotNull
     private String serviceVersion;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String dataVersionToken;
 }
