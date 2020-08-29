@@ -34,7 +34,7 @@ class HostNodeServiceImpl implements HostNodeService {
         Pageable pageRequest = PageRequest.of(page, perPage);
         Page<HostNode> resultsPage = hostNodeRepository.findAll(pageRequest);
 
-        return DtoUtils.toDtoResultsPage(resultsPage, pageRequest, this::makeHostNodeDetails, HostNodeDetails.class);
+        return DtoUtils.toDtoResultsPage(resultsPage, pageRequest, this::makeHostNodeInfoDetails, HostNodeDetails.class);
     }
 
     @Override
@@ -42,13 +42,13 @@ class HostNodeServiceImpl implements HostNodeService {
         HostNode hostNode = hostNodeRepository.findById(hostNodeId)
                 .orElseThrow(() -> new HostNodeNotFoundException(hostNodeId));
 
-        return makeHostNodeDetails(hostNode);
+        return makeHostNodeDetails(hostNode, true);
     }
 
     @Override
     public HostNodeDetails createHostNode(HostNodeData hostNode) throws DataCenterNotFoundException {
         HostNode newHostNode = hostNodeRepository.save(makeNewHostNode(hostNode));
-        return toHostNodeDetails(newHostNode, 0);
+        return toHostNodeDetails(newHostNode, 0, true);
     }
 
     @Override
@@ -72,7 +72,7 @@ class HostNodeServiceImpl implements HostNodeService {
                         () -> hostNodeRepository.save(makeNewHostNode(hostNodeData, dataCenter))
                 );
 
-        return makeHostNodeDetails(hostNode);
+        return makeHostNodeDetails(hostNode, true);
     }
 
     private HostNode makeNewHostNode(HostNodeData hostNodeData, DataCenter hostDataCenter) {
@@ -107,7 +107,7 @@ class HostNodeServiceImpl implements HostNodeService {
         hostNode.setOs(hostNodeData.getOperatingSystem());
         updateHostDataCenter(hostNode, hostNodeData.getDataCenterId());
 
-        return makeHostNodeDetails(hostNode);
+        return makeHostNodeDetails(hostNode, true);
     }
 
     @Override
@@ -127,7 +127,7 @@ class HostNodeServiceImpl implements HostNodeService {
             updateHostDataCenter(hostNode, updateAttributes.getDataCenterId().get());
         }
 
-        return makeHostNodeDetails(hostNode);
+        return makeHostNodeDetails(hostNode, true);
     }
 
     private void updateHostDataCenter(HostNode hostNode, long newDataCenterId) throws DataCenterNotFoundException {
@@ -149,19 +149,24 @@ class HostNodeServiceImpl implements HostNodeService {
         }
     }
 
-    private HostNodeDetails makeHostNodeDetails(HostNode hostNode) {
+    private HostNodeDetails makeHostNodeInfoDetails(HostNode hostNode) {
+        return makeHostNodeDetails(hostNode, false);
+    }
+
+    private HostNodeDetails makeHostNodeDetails(HostNode hostNode, boolean forUpdate) {
         int launchedInstances = getLaunchedInstancesCount(hostNode.getId());
-        return toHostNodeDetails(hostNode, launchedInstances);
+        return toHostNodeDetails(hostNode, launchedInstances, forUpdate);
     }
 
     private int getLaunchedInstancesCount(long hostNodeId) {
         return serviceInstanceRepository.countByHostId(hostNodeId);
     }
 
-    private HostNodeDetails toHostNodeDetails(HostNode hostNode, int launchedInstances) {
+    private HostNodeDetails toHostNodeDetails(HostNode hostNode, int launchedInstances, boolean forUpdate) {
+        String versionToken = forUpdate ? versionHolder.storeVersionForUpdate(hostNode.getVersion()) : null;
+
         return HostNodeDetails.builder()
                 .id(hostNode.getId())
-                .version(hostNode.getVersion())
                 .name(hostNode.getName())
                 .status(hostNode.getStatus().name().toLowerCase())
                 .launchedAt(hostNode.getLaunchedAt())
@@ -169,7 +174,7 @@ class HostNodeServiceImpl implements HostNodeService {
                 .dataCenterName(hostNode.getDataCenter().getName())
                 .operatingSystem(hostNode.getOs())
                 .launchedInstances(launchedInstances)
+                .dataVersionToken(versionToken)
                 .build();
     }
 }
-

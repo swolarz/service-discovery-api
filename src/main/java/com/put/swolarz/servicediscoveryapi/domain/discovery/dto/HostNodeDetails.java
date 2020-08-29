@@ -1,6 +1,7 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
 
@@ -10,7 +11,6 @@ import java.time.LocalDateTime;
 @Builder
 public class HostNodeDetails {
     private long id;
-    private long version;
 
     private String name;
     private String status;
@@ -18,12 +18,13 @@ public class HostNodeDetails {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss.SSS")
     private LocalDateTime launchedAt;
 
-    private Long dataCenterId;
+    private long dataCenterId;
     private String dataCenterName;
 
     private String operatingSystem;
 
     private int launchedInstances;
 
+    @JsonInclude(JsonInclude.Include.NON_NULL)
     private String dataVersionToken;
 }

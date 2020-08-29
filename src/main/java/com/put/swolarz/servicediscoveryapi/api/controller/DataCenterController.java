@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping("/api/datacenter")
+@RequestMapping("/api/datacenters")
 @RequiredArgsConstructor
 class DataCenterController {
     private static final String POE_TOKEN_HEADER = PostOnceExactlyHandler.POE_HEADER;

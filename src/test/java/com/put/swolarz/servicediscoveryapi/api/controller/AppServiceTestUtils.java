@@ -16,8 +16,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 
 @UtilityClass
@@ -49,22 +48,67 @@ class AppServiceTestUtils {
         return updateDictionary;
     }
 
+    public ResultActions getAppServiceUnchecked(MockMvc mockMvc, long id) throws Exception {
+        return mockMvc.perform(
+                get("/api/services/{id}", id)
+                        .accept(MediaType.APPLICATION_JSON)
+        );
+    }
+
+    public ResultActions getAppService(MockMvc mockMvc, long id) throws Exception {
+        return getAppServiceUnchecked(mockMvc, id)
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    public ResultActions getAppServices(MockMvc mockMvc, int page, int perPage) throws Exception {
+        return mockMvc.perform(
+                get("/api/services")
+                        .param("page", Integer.toString(page))
+                        .param("perPage", Integer.toString(perPage))
+                        .accept(MediaType.APPLICATION_JSON)
+        )
+                .andExpect(status().is2xxSuccessful());
+    }
+
     public ResultActions postAppService(MockMvc mockMvc, AppServiceRequest request, ObjectMapper mapper) throws Exception {
         String poeToken = UUID.randomUUID().toString();
 
         return mockMvc.perform(
                 post("/api/services")
+                        .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
                         .header("POE-Token", poeToken)
         )
                 .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(matchesAppServiceRequest(request, null, mapper));
+    }
+
+    public long postAppServiceForId(MockMvc mockMvc, AppServiceRequest request, ObjectMapper mapper) throws Exception {
+        String jsonResponse = postAppService(mockMvc, request, mapper)
+                .andReturn().getResponse().getContentAsString();
+
+        return mapper.readValue(jsonResponse, AppServiceDetails.class).getId();
     }
 
     public ResultActions postAppService(MockMvc mockMvc, AppServiceRequest request, long id, ObjectMapper mapper) throws Exception {
         return mockMvc.perform(
                 post("/api/services/{id}", id)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(request))
+        )
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(matchesAppServiceRequest(request, id, mapper));
+    }
+
+    public ResultActions putAppService(MockMvc mockMvc, AppServiceRequest request, long id, ObjectMapper mapper) throws Exception {
+        return mockMvc.perform(
+                put("/api/services/{id}", id)
+                        .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
         )
@@ -72,11 +116,12 @@ class AppServiceTestUtils {
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
-    public ResultActions putAppService(MockMvc mockMvc, AppServiceRequest request, long id, ObjectMapper mapper) throws Exception {
+    public ResultActions patchAppService(MockMvc mockMvc, Map<String, Object> patch, long id, ObjectMapper mapper) throws Exception {
         return mockMvc.perform(
-                put("/api/services/{id}", id)
+                patch("/api/services/{id}", id)
+                        .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(mapper.writeValueAsString(request))
+                        .content(mapper.writeValueAsString(patch))
         )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
@@ -87,16 +132,18 @@ class AppServiceTestUtils {
             String response = result.getResponse().getContentAsString();
             AppServiceDetails appService = mapper.readValue(response, AppServiceDetails.class);
 
-            assertAppServiceRequestMatches(appServiceRequest, appService);
+            assertAppServiceRequestMatches(appServiceRequest, appService, true);
 
             if (id != null)
                 assertEquals(id.longValue(), appService.getId());
         };
     }
 
-    private void assertAppServiceRequestMatches(AppServiceRequest request, AppServiceDetails response) {
+    public void assertAppServiceRequestMatches(AppServiceRequest request, AppServiceDetails response, boolean updatable) {
         assertEquals(request.getName(), response.getName());
         assertEquals(request.getServiceVersion(), response.getServiceVersion());
-        assertNotNull(request.getDataVersionToken());
+
+        if (updatable)
+            assertNotNull(request.getDataVersionToken());
     }
 }

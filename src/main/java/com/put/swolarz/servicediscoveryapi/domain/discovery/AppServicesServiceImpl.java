@@ -48,7 +48,7 @@ class AppServicesServiceImpl implements AppServicesService {
         return DtoUtils.toDtoResultsPage(
                 resultsPage, pageRequest,
                 appService -> toAppServiceDetails(
-                        appService, getTopServiceInstances(appService)
+                        appService, getTopServiceInstances(appService), false
                 ),
                 AppServiceDetails.class
         );
@@ -60,7 +60,7 @@ class AppServicesServiceImpl implements AppServicesService {
         AppService appService = appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
 
-        return toAppServiceDetails(appService, getTopServiceInstances(appService));
+        return toAppServiceDetails(appService, getTopServiceInstances(appService), true);
     }
 
     private Page<ServiceInstance> getTopServiceInstances(@NonNull AppService appService) {
@@ -203,11 +203,11 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     private AppServiceDetails toAppServiceSaveInfo(AppService appService) {
-        return toAppServiceDetails(appService, null);
+        return toAppServiceDetails(appService, null, true);
     }
 
-    private AppServiceDetails toAppServiceDetails(AppService appService, Page<ServiceInstance> topInstances) {
-        String versionToken = versionHolder.storeVersionForUpdate(appService.getVersion());
+    private AppServiceDetails toAppServiceDetails(AppService appService, Page<ServiceInstance> topInstances, boolean forUpdate) {
+        String versionToken = forUpdate ? versionHolder.storeVersionForUpdate(appService.getVersion()) : null;
 
         AppServiceDetails.AppServiceDetailsBuilder appServiceBuilder = AppServiceDetails.builder()
                 .id(appService.getId())

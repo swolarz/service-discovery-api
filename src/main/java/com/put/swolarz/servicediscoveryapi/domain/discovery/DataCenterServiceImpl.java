@@ -31,7 +31,7 @@ class DataCenterServiceImpl implements DataCenterService {
         PageRequest pageRequest = PageRequest.of(page, perPage);
         Page<DataCenter> dataCentersPage = dataCenterRepository.findAll(pageRequest);
 
-        return DtoUtils.toDtoResultsPage(dataCentersPage, pageRequest, this::toDataCenterDetails, DataCenterDetails.class);
+        return DtoUtils.toDtoResultsPage(dataCentersPage, pageRequest, this::toDataCenterInfoDetails, DataCenterDetails.class);
     }
 
     @Override
@@ -40,7 +40,7 @@ class DataCenterServiceImpl implements DataCenterService {
         DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
                 .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
 
-        return toDataCenterDetails(dataCenter);
+        return toDataCenterDetails(dataCenter, true);
     }
 
     @Override
@@ -49,7 +49,7 @@ class DataCenterServiceImpl implements DataCenterService {
                 new DataCenter(dataCenterData.getName(), dataCenterData.getLocation())
         );
 
-        return toDataCenterDetails(dataCenter);
+        return toDataCenterDetails(dataCenter, true);
     }
 
     @Override
@@ -57,7 +57,7 @@ class DataCenterServiceImpl implements DataCenterService {
         DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
                 .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
 
-        return toDataCenterDetails(makeDataCenterUpdate(dataCenter, dataCenterData));
+        return toDataCenterDetails(makeDataCenterUpdate(dataCenter, dataCenterData), true);
     }
 
     @Override
@@ -71,7 +71,7 @@ class DataCenterServiceImpl implements DataCenterService {
 
         dataCenterUpdateData.getName().ifPresent(dataCenter::setName);
 
-        return toDataCenterDetails(dataCenter);
+        return toDataCenterDetails(dataCenter, true);
     }
 
     @Override
@@ -84,7 +84,7 @@ class DataCenterServiceImpl implements DataCenterService {
                         )
                 );
 
-        return toDataCenterDetails(dataCenter);
+        return toDataCenterDetails(dataCenter, true);
     }
 
     private DataCenter makeDataCenterUpdate(DataCenter dataCenter, DataCenterData dataCenterData) {
@@ -106,8 +106,12 @@ class DataCenterServiceImpl implements DataCenterService {
         }
     }
 
-    private DataCenterDetails toDataCenterDetails(DataCenter dataCenter) {
-        String versionToken = versionHolder.storeVersionForUpdate(dataCenter.getVersion());
+    private DataCenterDetails toDataCenterInfoDetails(DataCenter dataCenter) {
+        return toDataCenterDetails(dataCenter, false);
+    }
+
+    private DataCenterDetails toDataCenterDetails(DataCenter dataCenter, boolean forUpdate) {
+        String versionToken = forUpdate ? versionHolder.storeVersionForUpdate(dataCenter.getVersion()) : null;
 
         return DataCenterDetails.builder()
                 .id(dataCenter.getId())

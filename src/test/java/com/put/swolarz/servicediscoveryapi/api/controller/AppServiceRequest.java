@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 @Builder
 @AllArgsConstructor
-public class AppServiceRequest {
+class AppServiceRequest {
 
     private String name;
     private String serviceVersion;
