@@ -8,8 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
-import javax.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 import java.util.Optional;
@@ -107,9 +106,11 @@ class DataCenterControllerITCase {
     @Test
     void testUpdatingDataCenterWithPost() throws Exception {
         DataCenterRequest createRequest = new DataCenterRequest("non-aws-data-center", "Australian Outback");
-        long dcId = postDataCenterForId(mockMvc, createRequest, mapper);
+        DataCenterDetails dataCenterDetails = readDataCenter(postDataCenter(mockMvc, createRequest, mapper), mapper);
+        final long dcId = dataCenterDetails.getId();
+        final String versionToken = dataCenterDetails.getDataVersionToken();
 
-        DataCenterRequest updateRequest = new DataCenterRequest("hidden-data-center", "Australian Outback");
+        DataCenterRequest updateRequest = new DataCenterRequest("hidden-data-center", "Australian Outback", versionToken);
         postDataCenter(mockMvc, updateRequest, dcId, mapper);
 
         getDataCenter(mockMvc, dcId)
@@ -119,9 +120,12 @@ class DataCenterControllerITCase {
     @Test
     void testUpdatingDataCenterWithPut() throws Exception {
         DataCenterRequest createRequest = new DataCenterRequest("non-aws-data-center", "Australian Outback");
-        long dcId = postDataCenterForId(mockMvc, createRequest, mapper);
+        DataCenterDetails dataCenterDetails = readDataCenter(postDataCenter(mockMvc, createRequest, mapper), mapper);
+        final long dcId = dataCenterDetails.getId();
+        final String versionToken = dataCenterDetails.getDataVersionToken();
 
-        DataCenterRequest updateRequest = new DataCenterRequest("hidden-data-center", "Australian Outback");
+        DataCenterRequest updateRequest = new DataCenterRequest("hidden-data-center", "Australian Outback", versionToken);
+
         putDataCenter(mockMvc, updateRequest, dcId, mapper);
 
         getDataCenter(mockMvc, dcId)

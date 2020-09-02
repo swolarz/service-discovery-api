@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.AppServiceDetails;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.ServiceInstanceDetails;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -510,16 +511,143 @@ class AppServiceControllerITCase {
 
     @Test
     void testScalingUpServiceInstances() throws Exception {
-        throw new UnsupportedOperationException("not implemented");
-    }
+        DataCenterRequest dcRequest = new DataCenterRequest("datacenter", "Beyond");
+        final long dcId = postDataCenterForId(mockMvc, dcRequest, mapper);
 
-    @Test
-    void testScalingDownServiceInstances() throws Exception {
-        throw new UnsupportedOperationException("not implemented");
+        HostNodeRequest hostRequest = new HostNodeRequest("host1", "up", "mint", dcId);
+        long hostId = postHostNodeForId(mockMvc, hostRequest, mapper);
+
+        HostNodeRequest hostRequest2 = new HostNodeRequest("host2", "up", "kali", dcId);
+        long hostId2 = postHostNodeForId(mockMvc, hostRequest2, mapper);
+
+        HostNodeRequest hostRequest3 = new HostNodeRequest("host3", "up", "ubuntu", dcId);
+        long hostId3 = postHostNodeForId(mockMvc, hostRequest3, mapper);
+
+        AppServiceRequest serviceRequest = newAppService("cassandra", "3.0");
+        long serviceId = postAppServiceForId(mockMvc, serviceRequest, mapper);
+
+        ServiceInstanceRequest instanceRequest1 = new ServiceInstanceRequest(serviceId, hostId, 1234);
+        long instanceId = postServiceInstanceForId(mockMvc, instanceRequest1, mapper);
+
+        mockMvc.perform(
+                post("/api/services/{id}/scale")
+                        .param("replication", "3")
+                        .accept(MediaType.APPLICATION_JSON)
+        )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.startedInstances", is(2)))
+                .andExpect(jsonPath("$.removedInstances", is(0)));
+
+        HostNodeDetails host1 = readHostNode(getHostNode(mockMvc, hostId), mapper);
+        HostNodeDetails host2 = readHostNode(getHostNode(mockMvc, hostId2), mapper);
+        HostNodeDetails host3 = readHostNode(getHostNode(mockMvc, hostId3), mapper);
+
+        int count1 = host1.getLaunchedInstances();
+        int count2 = host2.getLaunchedInstances();
+        int count3 = host3.getLaunchedInstances();
+
+        assertEquals(
+                String.format("Host instances distribution: (%d, %d, %d)", count1, count2, count3),
+                3, count1 + count2 + count3
+        );
     }
 
     @Test
     void testUnnecessaryScalingServiceInstances() throws Exception {
-        throw new UnsupportedOperationException("not implemented");
+        DataCenterRequest dcRequest = new DataCenterRequest("datacenter", "Beyond");
+        final long dcId = postDataCenterForId(mockMvc, dcRequest, mapper);
+
+        HostNodeRequest hostRequest = new HostNodeRequest("host1", "up", "mint", dcId);
+        long hostId = postHostNodeForId(mockMvc, hostRequest, mapper);
+
+        HostNodeRequest hostRequest2 = new HostNodeRequest("host2", "up", "kali", dcId);
+        long hostId2 = postHostNodeForId(mockMvc, hostRequest2, mapper);
+
+        HostNodeRequest hostRequest3 = new HostNodeRequest("host3", "up", "ubuntu", dcId);
+        long hostId3 = postHostNodeForId(mockMvc, hostRequest3, mapper);
+
+        AppServiceRequest serviceRequest = newAppService("cassandra", "3.0");
+        long serviceId = postAppServiceForId(mockMvc, serviceRequest, mapper);
+
+        ServiceInstanceRequest instanceRequest1 = new ServiceInstanceRequest(serviceId, hostId, 1234);
+        long instanceId = postServiceInstanceForId(mockMvc, instanceRequest1, mapper);
+
+        ServiceInstanceRequest instanceRequest2 = new ServiceInstanceRequest(serviceId, hostId2, 1234);
+        long instanceId2 = postServiceInstanceForId(mockMvc, instanceRequest1, mapper);
+
+        mockMvc.perform(
+                post("/api/services/{id}/scale")
+                        .param("replication", "2")
+                        .accept(MediaType.APPLICATION_JSON)
+        )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.startedInstances", is(0)))
+                .andExpect(jsonPath("$.removedInstances", is(0)));
+
+        HostNodeDetails host1 = readHostNode(getHostNode(mockMvc, hostId), mapper);
+        HostNodeDetails host2 = readHostNode(getHostNode(mockMvc, hostId2), mapper);
+        HostNodeDetails host3 = readHostNode(getHostNode(mockMvc, hostId3), mapper);
+
+        int count1 = host1.getLaunchedInstances();
+        int count2 = host2.getLaunchedInstances();
+        int count3 = host3.getLaunchedInstances();
+
+        assertEquals("Host 1 should have single instance", 1, count1);
+        assertEquals("Host 2 should have single instance", 1, count2);
+        assertEquals("Host 3 should have no instances", 0, count3);
+    }
+
+    @Test
+    void testScalingDownServiceInstances() throws Exception {
+        DataCenterRequest dcRequest = new DataCenterRequest("datacenter", "Beyond");
+        final long dcId = postDataCenterForId(mockMvc, dcRequest, mapper);
+
+        HostNodeRequest hostRequest = new HostNodeRequest("host1", "up", "mint", dcId);
+        long hostId = postHostNodeForId(mockMvc, hostRequest, mapper);
+
+        HostNodeRequest hostRequest2 = new HostNodeRequest("host2", "up", "kali", dcId);
+        long hostId2 = postHostNodeForId(mockMvc, hostRequest2, mapper);
+
+        HostNodeRequest hostRequest3 = new HostNodeRequest("host3", "up", "ubuntu", dcId);
+        long hostId3 = postHostNodeForId(mockMvc, hostRequest3, mapper);
+
+        AppServiceRequest serviceRequest = newAppService("cassandra", "3.0");
+        long serviceId = postAppServiceForId(mockMvc, serviceRequest, mapper);
+
+        ServiceInstanceRequest instanceRequest1 = new ServiceInstanceRequest(serviceId, hostId, 1234);
+        ServiceInstanceRequest instanceRequest2 = new ServiceInstanceRequest(serviceId, hostId2, 1234);
+        ServiceInstanceRequest instanceRequest3 = new ServiceInstanceRequest(serviceId, hostId3, 12345);
+        ServiceInstanceRequest instanceRequest4 = new ServiceInstanceRequest(serviceId, hostId, 4321);
+        ServiceInstanceRequest instanceRequest5 = new ServiceInstanceRequest(serviceId, hostId, 9876);
+
+        long instanceId = postServiceInstanceForId(mockMvc, instanceRequest1, mapper);
+        long instanceId2 = postServiceInstanceForId(mockMvc, instanceRequest2, mapper);
+        long instanceId3 = postServiceInstanceForId(mockMvc, instanceRequest3, mapper);
+        long instanceId4 = postServiceInstanceForId(mockMvc, instanceRequest4, mapper);
+        long instanceId5 = postServiceInstanceForId(mockMvc, instanceRequest5, mapper);
+
+        mockMvc.perform(
+                post("/api/services/{id}/scale")
+                        .param("replication", "2")
+                        .accept(MediaType.APPLICATION_JSON)
+        )
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.startedInstances", is(0)))
+                .andExpect(jsonPath("$.removedInstances", is(3)));
+
+        HostNodeDetails host1 = readHostNode(getHostNode(mockMvc, hostId), mapper);
+        HostNodeDetails host2 = readHostNode(getHostNode(mockMvc, hostId2), mapper);
+        HostNodeDetails host3 = readHostNode(getHostNode(mockMvc, hostId3), mapper);
+
+        int count1 = host1.getLaunchedInstances();
+        int count2 = host2.getLaunchedInstances();
+        int count3 = host3.getLaunchedInstances();
+
+        assertEquals("Host 1 should have single instance", 1, count1);
+        assertEquals("Host 2 should have single instance", 1, count2);
+        assertEquals("Host 3 should have no instances", 0, count3);
     }
 }

@@ -68,7 +68,8 @@ class AppServiceTestUtils {
                         .param("perPage", Integer.toString(perPage))
                         .accept(MediaType.APPLICATION_JSON)
         )
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions postAppService(MockMvc mockMvc, AppServiceRequest request, ObjectMapper mapper) throws Exception {

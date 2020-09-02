@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.ResultMatcher;
 
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -81,7 +82,7 @@ class HostNodeTestUtils {
         return mapper.readValue(jsonResponse, HostNodeDetails.class).getId();
     }
 
-    public ResultActions postHostNode(MockMvc mockMvc, DataCenterRequest request, long id, ObjectMapper mapper) throws Exception {
+    public ResultActions postHostNode(MockMvc mockMvc, HostNodeRequest request, long id, ObjectMapper mapper) throws Exception {
         return mockMvc.perform(
                 post("/api/hosts/{id}", id)
                         .accept(MediaType.APPLICATION_JSON)
@@ -112,6 +113,11 @@ class HostNodeTestUtils {
         )
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    public HostNodeDetails readHostNode(ResultActions resultActions, ObjectMapper mapper) throws Exception {
+        String hostJson = resultActions.andReturn().getResponse().getContentAsString();
+        return mapper.readValue(hostJson, HostNodeDetails.class);
     }
 
     public ResultMatcher matchesHostNodeRequest(HostNodeRequest request, Long id,
