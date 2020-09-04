@@ -22,7 +22,4 @@ spring:
 
     redis:
         host: ${APP_CACHE_HOST}
-
-## Spring Data
-spring.jpa.hibernate.ddl-auto=validate
-spring.jpa.hibernate.show_sql=true
+        port: ${APP_CACHE_PORT}

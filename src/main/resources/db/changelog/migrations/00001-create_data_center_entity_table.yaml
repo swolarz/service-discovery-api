@@ -2,6 +2,16 @@ databaseChangeLog:
   - changeSet:
       id: 00001-1
       author: swolarz
+      comment: Create sequence generator DDL for DataCenter ids
+      changes:
+        - createSequence:
+            sequenceName: DATA_CENTER_SEQ_GEN
+            startValue: 1
+            incrementBy: 1
+
+  - changeSet:
+      id: 00001-2
+      author: swolarz
       comment: Create table DDL for DataCenter entity
       changes:
         - createTable:
@@ -27,14 +37,3 @@ databaseChangeLog:
                   type: bigint
                   constraints:
                     nullable: false
-
-  - changeSet:
-      id: 00001-2
-      author: swolarz
-      comment: Create sequence generator DDL for DataCenter ids
-      changes:
-        - createSequence:
-            sequenceName: DATA_CENTER_SEQ_GEN
-            minValue: 1
-            incrementBy: 1
-

@@ -31,7 +31,7 @@ class HostNodeController {
     }
 
     @GetMapping("/{hostId}")
-    public ResponseEntity<HostNodeDetails> getHostNode(@PathVariable("id") long hostId) throws BusinessException {
+    public ResponseEntity<HostNodeDetails> getHostNode(@PathVariable("hostId") long hostId) throws BusinessException {
 
         HostNodeDetails hostNode = hostNodeService.getHostNode(hostId);
         return ResponseEntity.ok(hostNode);

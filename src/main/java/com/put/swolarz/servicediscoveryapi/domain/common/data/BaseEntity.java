@@ -23,5 +23,4 @@ public abstract class BaseEntity implements Serializable {
     private long version;
 
     public abstract Long getId();
-    public abstract void setId(Long id);
 }

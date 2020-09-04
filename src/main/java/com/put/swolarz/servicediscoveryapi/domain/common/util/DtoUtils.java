@@ -11,11 +11,11 @@ import java.util.stream.Collectors;
 
 @UtilityClass
 public class DtoUtils {
-    public <T, D> ResultsPage<D> toDtoResultsPage(Page<T> resultsPage, Pageable pageable, DtoMapper<T, D> dtoMapper, Class<D> dtoClass) {
+    public <T, D> ResultsPage<D> toDtoResultsPage(Page<T> resultsPage, int page, int perPage, DtoMapper<T, D> dtoMapper, Class<D> dtoClass) {
         return ResultsPage.builder(dtoClass)
                 .totalNumber(resultsPage.getTotalElements())
-                .page(pageable.getPageNumber())
-                .perPage(pageable.getPageSize())
+                .page(page)
+                .perPage(perPage)
                 .results(toDtoList(resultsPage, dtoMapper))
                 .build();
     }

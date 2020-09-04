@@ -42,11 +42,11 @@ class AppServicesServiceImpl implements AppServicesService {
     @Override
     @ReadOnlyTransaction
     public ResultsPage<AppServiceDetails> getAppServices(int page, int perPage) {
-        PageRequest pageRequest = PageRequest.of(page, perPage);
+        PageRequest pageRequest = PageRequest.of(page - 1, perPage);
         Page<AppService> resultsPage = appServiceRepository.findAll(pageRequest);
 
         return DtoUtils.toDtoResultsPage(
-                resultsPage, pageRequest,
+                resultsPage, page, perPage,
                 appService -> toAppServiceDetails(
                         appService, getTopServiceInstances(appService), false
                 ),
@@ -75,10 +75,10 @@ class AppServicesServiceImpl implements AppServicesService {
         appServiceRepository.findById(appServiceId)
                 .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
 
-        PageRequest pageRequest = PageRequest.of(page, perPage);
+        PageRequest pageRequest = PageRequest.of(page - 1, perPage);
         Page<ServiceInstance> resultsPage = serviceInstanceRepository.findByServiceId(appServiceId, pageRequest);
 
-        return DtoUtils.toDtoResultsPage(resultsPage, pageRequest, this::toServiceInstanceDetails, ServiceInstanceDetails.class);
+        return DtoUtils.toDtoResultsPage(resultsPage, page, perPage, this::toServiceInstanceDetails, ServiceInstanceDetails.class);
     }
 
     @Override
@@ -99,28 +99,23 @@ class AppServicesServiceImpl implements AppServicesService {
     public ServiceInstanceDetails addAppServiceInstance(ServiceInstanceData serviceInstanceData)
             throws AppServiceNotFoundException, HostNodeNotFoundException, HostPortAlreadyInUse {
 
-        try {
-            AppService service = appServiceRepository.findById(serviceInstanceData.getAppServiceId())
-                    .orElseThrow(() -> new AppServiceNotFoundException(serviceInstanceData.getAppServiceId()));
+        AppService service = appServiceRepository.findById(serviceInstanceData.getAppServiceId())
+                .orElseThrow(() -> new AppServiceNotFoundException(serviceInstanceData.getAppServiceId()));
 
-            HostNode host = hostNodeRepository.findById(serviceInstanceData.getHostNodeId())
-                    .orElseThrow(() -> new HostNodeNotFoundException(serviceInstanceData.getHostNodeId()));
+        HostNode host = hostNodeRepository.findById(serviceInstanceData.getHostNodeId())
+                .orElseThrow(() -> new HostNodeNotFoundException(serviceInstanceData.getHostNodeId()));
 
-            ServiceInstance instance = serviceInstanceRepository.saveAndFlush(
-                    new ServiceInstance(service, host, serviceInstanceData.getPort())
-            );
+        long hostId = serviceInstanceData.getHostNodeId();
+        int port = serviceInstanceData.getPort();
 
-            return toServiceInstanceDetails(instance);
-        }
-        catch (DataIntegrityViolationException e) {
-            long hostId = serviceInstanceData.getHostNodeId();
-            int port = serviceInstanceData.getPort();
+        if (serviceInstanceRepository.existsByHostIdAndPort(hostId, port))
+            throw new HostPortAlreadyInUse(hostId, port);
 
-            if (serviceInstanceRepository.existsByHostIdAndPort(hostId, port))
-                throw new HostPortAlreadyInUse(hostId, port, e);
+        ServiceInstance instance = serviceInstanceRepository.saveAndFlush(
+                new ServiceInstance(service, host, serviceInstanceData.getPort())
+        );
 
-            throw new RuntimeException("Unexpected service instance creation error", e);
-        }
+        return toServiceInstanceDetails(instance);
     }
 
     @Override
@@ -140,7 +135,7 @@ class AppServicesServiceImpl implements AppServicesService {
 
     @Override
     public AppServiceDetails createAppService(AppServiceData appServiceData) {
-        AppService appService = appServiceRepository.save(
+        AppService appService = appServiceRepository.saveAndFlush(
                 new AppService(appServiceData.getName(), appServiceData.getServiceVersion())
         );
 
@@ -158,9 +153,11 @@ class AppServicesServiceImpl implements AppServicesService {
 
                     return service;
                 })
-                .orElseGet(() -> appServiceRepository.save(
-                        new AppService(appServiceData.getName(), appServiceData.getServiceVersion())
-                ));
+                .orElseGet(() ->
+                        new AppService(appServiceId, appServiceData.getName(), appServiceData.getServiceVersion())
+                );
+
+        appService = appServiceRepository.saveAndFlush(appService);
 
         return toAppServiceSaveInfo(appService);
     }
@@ -176,6 +173,8 @@ class AppServicesServiceImpl implements AppServicesService {
         appService.setName(appServiceData.getName());
         appService.setServiceVersion(appServiceData.getServiceVersion());
 
+        appService = appServiceRepository.saveAndFlush(appService);
+
         return toAppServiceSaveInfo(appService);
     }
 
@@ -189,17 +188,18 @@ class AppServicesServiceImpl implements AppServicesService {
         updateData.getName().ifPresent(appService::setName);
         updateData.getServiceVersion().ifPresent(appService::setServiceVersion);
 
+        appService = appServiceRepository.saveAndFlush(appService);
+
         return toAppServiceSaveInfo(appService);
     }
 
     @Override
     public void removeAppService(long appServiceId) throws AppServiceNotFoundException {
-        try {
-            appServiceRepository.deleteById(appServiceId);
-        }
-        catch (EmptyResultDataAccessException e) {
-            throw new AppServiceNotFoundException(appServiceId, e);
-        }
+        AppService appService = appServiceRepository.findById(appServiceId)
+                .orElseThrow(() -> new AppServiceNotFoundException(appServiceId));
+
+        serviceInstanceRepository.deleteByServiceId(appService.getId());
+        appServiceRepository.delete(appService);
     }
 
     private AppServiceDetails toAppServiceSaveInfo(AppService appService) {
@@ -278,11 +278,11 @@ class AppServicesServiceImpl implements AppServicesService {
     }
 
     private void scaleServiceUp(long appServiceId, int toLaunchNum) {
-        List<HostNode>  hostNodes = hostNodeRepository.findLoadBalancedRepositories(PageRequest.of(0, toLaunchNum));
+        List<HostNode>  hostNodes = hostNodeRepository.findLoadBalancedRepositories(toLaunchNum);
         Map<Long, HostPortResolver> portResolvers = hostNodes.stream()
                 .collect(Collectors.toMap(
                         HostNode::getId,
-                        host -> new HostPortResolver(host.getUsedPorts())
+                        host -> new HostPortResolver(hostNodeRepository.getHostUsedPorts(host))
                 ));
 
         int launched = 0;

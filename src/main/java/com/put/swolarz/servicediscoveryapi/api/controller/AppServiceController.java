@@ -4,6 +4,7 @@ import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.AppServicesService;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -96,7 +97,7 @@ class AppServiceController {
 
     @PutMapping("/{appServiceId}")
     public ResponseEntity<AppServiceDetails> putAppService(@PathVariable("appServiceId") long appServiceId,
-                                                           @RequestBody AppServiceData appService) {
+                                                           @RequestBody AppServiceData appService) throws BusinessException {
 
         AppServiceDetails appServiceDetails = appServicesService.createOrUpdateAppService(appServiceId, appService);
         return ResponseEntity.ok(appServiceDetails);

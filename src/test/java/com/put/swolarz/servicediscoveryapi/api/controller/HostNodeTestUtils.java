@@ -45,7 +45,8 @@ class HostNodeTestUtils {
                         .param("perPage", Integer.toString(perPage))
                         .accept(MediaType.APPLICATION_JSON)
         )
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions getHostNodeUnchecked(MockMvc mockMvc, long id) throws Exception {
@@ -57,8 +58,8 @@ class HostNodeTestUtils {
 
     public ResultActions getHostNode(MockMvc mockMvc, long id) throws Exception {
         return getHostNodeUnchecked(mockMvc, id)
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions postHostNode(MockMvc mockMvc, HostNodeRequest request, ObjectMapper mapper) throws Exception {
@@ -71,8 +72,8 @@ class HostNodeTestUtils {
                         .content(mapper.writeValueAsString(request))
                         .header("POE-Token", poeToken)
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public long postHostNodeForId(MockMvc mockMvc, HostNodeRequest request, ObjectMapper mapper) throws Exception {
@@ -89,8 +90,8 @@ class HostNodeTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions putHostNode(MockMvc mockMvc, HostNodeRequest request, long id, ObjectMapper mapper) throws Exception {
@@ -100,8 +101,8 @@ class HostNodeTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions patchHostNode(MockMvc mockMvc, Map<String, Object> patch, long id, ObjectMapper mapper) throws Exception {
@@ -111,8 +112,8 @@ class HostNodeTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(patch))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public HostNodeDetails readHostNode(ResultActions resultActions, ObjectMapper mapper) throws Exception {

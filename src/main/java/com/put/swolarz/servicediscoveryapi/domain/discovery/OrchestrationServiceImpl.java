@@ -30,7 +30,7 @@ class OrchestrationServiceImpl implements OrchestrationService {
         long sourceHostId = migrationRequest.getSourceHostId();
         long targetHostId = migrationRequest.getTargetHostId();
 
-        if (hostNodeRepository.existsById(sourceHostId))
+        if (!hostNodeRepository.existsById(sourceHostId))
             throw new HostNodeNotFoundException(sourceHostId);
 
         HostNode targetHost = hostNodeRepository.findById(targetHostId)
@@ -45,7 +45,8 @@ class OrchestrationServiceImpl implements OrchestrationService {
 //                .map(ServiceInstancePort::getPort)
 //                .collect(Collectors.toSet());
 
-        List<Integer> usedPorts = targetHost.getUsedPorts();
+        List<Integer> usedPorts = hostNodeRepository.getHostUsedPorts(targetHost);
+//        List<Integer> usedPorts = targetHost.getUsedPorts();
 
         AtomicInteger migrationCount = new AtomicInteger();
         HostPortResolver portResolver = new HostPortResolver(usedPorts);

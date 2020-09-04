@@ -1,8 +1,6 @@
 package com.put.swolarz.servicediscoveryapi.api.controller;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.AppServiceDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.ServiceInstanceDetails;
@@ -64,7 +62,7 @@ class AppServiceControllerITCase {
                 .andExpect(jsonPath("$.results", hasSize(4)))
                 .andReturn().getResponse().getContentAsString();
 
-        ResultsPage<AppServiceDetails> response = mapper.readValue(responseJson, new TypeReference<AppServiceDetails>() {});
+        AppServiceResults response = mapper.readValue(responseJson, AppServiceResults.class);
         Map<String, AppServiceDetails> responseMap = response.getResults().stream()
                 .collect(
                         Collectors.toMap(
@@ -143,7 +141,7 @@ class AppServiceControllerITCase {
                 .andExpect(
                         jsonPath(
                                 "$.results[*].id",
-                                containsInAnyOrder(instanceId80, instanceId443, instanceId8080)
+                                containsInAnyOrder((int) instanceId80, (int) instanceId443, (int) instanceId8080)
                         )
                 );
 
@@ -171,7 +169,7 @@ class AppServiceControllerITCase {
         final long missingServiceId = 0;
         ServiceInstanceRequest request = new ServiceInstanceRequest(missingServiceId, hostId, 80);
 
-        postServiceInstance(mockMvc, request, mapper)
+        postServiceInstanceUnchecked(mockMvc, request, mapper)
                 .andExpect(status().isNotFound());
     }
 
@@ -184,7 +182,7 @@ class AppServiceControllerITCase {
 
         ServiceInstanceRequest request = new ServiceInstanceRequest(serviceId, missingHostId, 80);
 
-        postServiceInstance(mockMvc, request, mapper)
+        postServiceInstanceUnchecked(mockMvc, request, mapper)
                 .andExpect(status().isNotFound());
     }
 
@@ -208,12 +206,15 @@ class AppServiceControllerITCase {
         ServiceInstanceDetails instance = mapper.readValue(instanceJson, ServiceInstanceDetails.class);
 
         getAppService(mockMvc, serviceId)
-                .andExpect(matchesServiceInstanceRequest(request, instance.getId(), appServiceRequest, hostRequest, mapper))
+                .andExpect(matchesAppServiceRequest(appServiceRequest, serviceId, mapper))
                 .andExpect(jsonPath("$.instancesInfo.totalCount", is(1)))
-                .andExpect(jsonPath("$.instancesInfo.topInstances[0].instanceId", is(instance.getId())))
-                .andExpect(jsonPath("$.instancesInfo.topInstances[0].hostId", is(hostId)))
+                .andExpect(jsonPath("$.instancesInfo.topInstances[0].instanceId", is((int) instance.getId())))
+                .andExpect(jsonPath("$.instancesInfo.topInstances[0].hostId", is((int) hostId)))
                 .andExpect(jsonPath("$.instancesInfo.topInstances[0].hostName", is("node-js")))
                 .andExpect(jsonPath("$.instancesInfo.topInstances[0].status", is("running")));
+
+        getServiceInstance(mockMvc, instance.getId(), serviceId)
+                .andExpect(matchesServiceInstanceRequest(request, instance.getId(), appServiceRequest, hostRequest, mapper));
     }
 
     @Test
@@ -237,7 +238,7 @@ class AppServiceControllerITCase {
                 .andExpect(jsonPath("$.launchedInstances", is(2)));
 
         mockMvc.perform(delete("/api/services/{serviceId}/instances/{id}", serviceId, instanceId8080))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/services/{serviceId}/instances/{id}", serviceId, instanceId8080))
                 .andExpect(status().isNotFound());
@@ -317,7 +318,7 @@ class AppServiceControllerITCase {
     void testPostCreateSingleAppServiceWithPostOnce() throws Exception {
         AppServiceRequest request = newAppService("only single service", "1.0");
         String poeToken = UUID.randomUUID().toString();
-        long serviceId = 3;
+        Long serviceId = null;
 
         String requestJson = mapper.writeValueAsString(request);
 
@@ -330,11 +331,15 @@ class AppServiceControllerITCase {
                             .header("POE-Token", poeToken)
             );
 
-            if (i == 0)
-                resultActions.andExpect(status().is2xxSuccessful());
+            if (i == 0) {
+                resultActions.andExpect(status().isOk());
+                serviceId = readAppService(resultActions, mapper).getId();
+            }
             else
                 resultActions.andExpect(status().isMethodNotAllowed());
         }
+
+        assertNotNull(serviceId);
 
         getAppService(mockMvc, serviceId)
                 .andExpect(matchesAppServiceRequest(request, serviceId, mapper));
@@ -348,13 +353,13 @@ class AppServiceControllerITCase {
                 .andReturn().getResponse().getContentAsString();
 
         AppServiceDetails appService = mapper.readValue(responseJson, AppServiceDetails.class);
-        AppServiceRequest updateRequest = newAppService("normal service", "0.1");
+        AppServiceRequest updateRequest = appServiceUpdate("normal service", "0.1", appService.getDataVersionToken());
 
         postAppService(mockMvc, updateRequest, appService.getId(), mapper)
-                .andExpect(matchesAppServiceRequest(createRequest, appService.getId(), mapper));
+                .andExpect(matchesAppServiceRequest(updateRequest, appService.getId(), mapper));
 
         getAppService(mockMvc, appService.getId())
-                .andExpect(matchesAppServiceRequest(createRequest, appService.getId(), mapper));
+                .andExpect(matchesAppServiceRequest(updateRequest, appService.getId(), mapper));
     }
 
     @Test
@@ -374,11 +379,13 @@ class AppServiceControllerITCase {
         AppServiceRequest createRequest = newAppService("cs service", "1.0.0_cs");
         final long serviceId = 10;
 
-        putAppService(mockMvc, createRequest, serviceId, mapper)
-                .andExpect(matchesAppServiceRequest(createRequest, serviceId, mapper));
+        AppServiceDetails appService = readAppService(
+                putAppService(mockMvc, createRequest, serviceId, mapper)
+                        .andExpect(matchesAppServiceRequest(createRequest, serviceId, mapper)),
+                mapper
+        );
 
-        AppServiceRequest updateRequest = newAppService("cs put service", "1.0.1_putcs");
-
+        AppServiceRequest updateRequest = appServiceUpdate("cs put service", "1.0.1_putcs", appService.getDataVersionToken());
         putAppService(mockMvc, updateRequest, serviceId, mapper)
                 .andExpect(matchesAppServiceRequest(updateRequest, serviceId, mapper));
 
@@ -477,7 +484,7 @@ class AppServiceControllerITCase {
         AppServiceDetails appService = mapper.readValue(responseJson, AppServiceDetails.class);
 
         mockMvc.perform(delete("/api/services/{id}", appService.getId()))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk());
 
         mockMvc.perform(get("/api/services/{id}", appService.getId()))
                 .andExpect(status().isNotFound());
@@ -503,7 +510,7 @@ class AppServiceControllerITCase {
         postServiceInstance(mockMvc, instanceRequest8080, mapper);
 
         mockMvc.perform(delete("/api/services/{id}", serviceId))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk());
 
         getHostNode(mockMvc, hostId)
                 .andExpect(jsonPath("$.launchedInstances", is(0)));
@@ -530,12 +537,12 @@ class AppServiceControllerITCase {
         long instanceId = postServiceInstanceForId(mockMvc, instanceRequest1, mapper);
 
         mockMvc.perform(
-                post("/api/services/{id}/scale")
+                post("/api/services/{id}/scale", serviceId)
                         .param("replication", "3")
                         .accept(MediaType.APPLICATION_JSON)
         )
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.startedInstances", is(2)))
                 .andExpect(jsonPath("$.removedInstances", is(0)));
 
@@ -574,15 +581,15 @@ class AppServiceControllerITCase {
         long instanceId = postServiceInstanceForId(mockMvc, instanceRequest1, mapper);
 
         ServiceInstanceRequest instanceRequest2 = new ServiceInstanceRequest(serviceId, hostId2, 1234);
-        long instanceId2 = postServiceInstanceForId(mockMvc, instanceRequest1, mapper);
+        long instanceId2 = postServiceInstanceForId(mockMvc, instanceRequest2, mapper);
 
         mockMvc.perform(
-                post("/api/services/{id}/scale")
+                post("/api/services/{id}/scale", serviceId)
                         .param("replication", "2")
                         .accept(MediaType.APPLICATION_JSON)
         )
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.startedInstances", is(0)))
                 .andExpect(jsonPath("$.removedInstances", is(0)));
 
@@ -629,12 +636,12 @@ class AppServiceControllerITCase {
         long instanceId5 = postServiceInstanceForId(mockMvc, instanceRequest5, mapper);
 
         mockMvc.perform(
-                post("/api/services/{id}/scale")
+                post("/api/services/{id}/scale", serviceId)
                         .param("replication", "2")
                         .accept(MediaType.APPLICATION_JSON)
         )
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.startedInstances", is(0)))
                 .andExpect(jsonPath("$.removedInstances", is(3)));
 

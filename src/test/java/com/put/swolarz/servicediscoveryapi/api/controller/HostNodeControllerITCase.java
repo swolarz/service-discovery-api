@@ -58,7 +58,12 @@ public class HostNodeControllerITCase {
                 .andExpect(jsonPath("$.perPage", is(10)))
                 .andExpect(jsonPath("$.totalNumber", is(5)))
                 .andExpect(jsonPath("$.results", hasSize(5)))
-                .andExpect(jsonPath("$.results[*].id", containsInAnyOrder(id1, id2, id3, id4, id5)));
+                .andExpect(
+                        jsonPath(
+                                "$.results[*].id",
+                                containsInAnyOrder((int) id1, (int) id2, (int) id3, (int) id4, (int) id5)
+                        )
+                );
 
         getHostNodes(mockMvc, 1, 2)
                 .andExpect(jsonPath("$.page", is(1)))
@@ -98,7 +103,7 @@ public class HostNodeControllerITCase {
         HostNodeDetails hostNodeDetails = readHostNode(resultActions, mapper);
 
         getHostNode(mockMvc, hostNodeDetails.getId())
-                .andExpect(matchesHostNodeRequest(createRequest, dcId, dcRequest, 0, mapper));
+                .andExpect(matchesHostNodeRequest(createRequest, hostNodeDetails.getId(), dcRequest, 0, mapper));
     }
 
     @Test
@@ -106,14 +111,14 @@ public class HostNodeControllerITCase {
         DataCenterRequest dcRequest = new DataCenterRequest("non-aws-data-center", "Australian Outback");
         final long dcId = postDataCenterForId(mockMvc, dcRequest, mapper);
 
-        HostNodeRequest createRequest = new HostNodeRequest("new-numbered-node", "stopped", "centos", dcId);
+        HostNodeRequest createRequest = new HostNodeRequest("new-numbered-node", "down", "centos", dcId);
         final long hostId = 1;
 
         putHostNode(mockMvc, createRequest, hostId, mapper)
                 .andExpect(matchesHostNodeRequest(createRequest, hostId, dcRequest, 0, mapper));
 
         getHostNode(mockMvc, hostId)
-                .andExpect(matchesHostNodeRequest(createRequest, dcId, dcRequest, 0, mapper));
+                .andExpect(matchesHostNodeRequest(createRequest, hostId, dcRequest, 0, mapper));
     }
 
     @Test
@@ -150,8 +155,8 @@ public class HostNodeControllerITCase {
         HostNodeRequest updateRequest = new HostNodeRequest("test node", "up", "ubuntu", aDcId, versionToken);
         putHostNode(mockMvc, updateRequest, hostId, mapper);
 
-        getHostNode(mockMvc, dcId)
-                .andExpect(matchesHostNodeRequest(updateRequest, dcId, alternativeDcRequest, 0, mapper));
+        getHostNode(mockMvc, hostId)
+                .andExpect(matchesHostNodeRequest(updateRequest, hostId, alternativeDcRequest, 0, mapper));
     }
 
     @Test
@@ -169,24 +174,24 @@ public class HostNodeControllerITCase {
         );
         HostNodeRequest patchedData = new HostNodeRequest("fixed node", "up", "Arch", dcId);
 
-        DataCenterDetails patchedDc = readDataCenter(
-                patchDataCenter(mockMvc, updatePatch, dcId, mapper)
+        HostNodeDetails patchedDc = readHostNode(
+                patchHostNode(mockMvc, updatePatch, hostId, mapper)
                         .andExpect(matchesHostNodeRequest(patchedData, hostId, dcRequest, 0, mapper)),
                 mapper
         );
 
         HostNodeRequest updateRequest = new HostNodeRequest(
-                "complete node", "stopped", "Kali", dcId, patchedDc.getDataVersionToken()
+                "complete node", "down", "Kali", dcId, patchedDc.getDataVersionToken()
         );
         putHostNode(mockMvc, updateRequest, hostId, mapper)
                 .andExpect(matchesHostNodeRequest(updateRequest, hostId, dcRequest, 0, mapper));
 
-        getDataCenter(mockMvc, dcId)
+        getHostNode(mockMvc, hostId)
                 .andExpect(matchesHostNodeRequest(updateRequest, hostId, dcRequest, 0, mapper));
     }
 
     @Test
-    void testPatchingDataCenter() throws Exception {
+    void testPatchingHostNode() throws Exception {
         DataCenterRequest dcRequest = new DataCenterRequest("serverless-datacenter", "beynd");
         long dcId = postDataCenterForId(mockMvc, dcRequest, mapper);
 
@@ -201,7 +206,7 @@ public class HostNodeControllerITCase {
         );
         HostNodeRequest patchedHost = new HostNodeRequest("host", "up", "windows", dcId2);
 
-        patchHostNode(mockMvc, patchRequest, dcId, mapper)
+        patchHostNode(mockMvc, patchRequest, createdHost.getId(), mapper)
                 .andExpect(matchesHostNodeRequest(patchedHost, createdHost.getId(), dcRequest2, 0, mapper));
 
         getHostNode(mockMvc, createdHost.getId())
@@ -209,7 +214,7 @@ public class HostNodeControllerITCase {
     }
 
     @Test
-    void testDeletingDataCenter() throws Exception {
+    void testDeletingHostNode() throws Exception {
         DataCenterRequest dcRequest = new DataCenterRequest("forgotten datacenter", "who knows?");
         final long dcId = postDataCenterForId(mockMvc, dcRequest, mapper);
 
@@ -217,14 +222,14 @@ public class HostNodeControllerITCase {
         final long hostId = postHostNodeForId(mockMvc, createRequest, mapper);
 
         mockMvc.perform(delete("/api/hosts/{id}", hostId))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk());
 
         getHostNodeUnchecked(mockMvc, hostId)
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void testDeletingDataCenterWithHostsAndServiceInstances() throws Exception {
+    void testDeletingHostNodeWithServiceInstances() throws Exception {
         DataCenterRequest createRequest = new DataCenterRequest("deprecated datacenter", "Atlantis");
         final long dcId = postDataCenterForId(mockMvc, createRequest, mapper);
 
@@ -248,11 +253,11 @@ public class HostNodeControllerITCase {
         getHostNode(mockMvc, hostId)
                 .andExpect(matchesHostNodeRequest(hostRequest, hostId, createRequest, 2, mapper));
 
-        getAppServices(mockMvc, 1, 10)
+        getServiceInstances(mockMvc, serviceId, 1, 10)
                 .andExpect(jsonPath("$.results", hasSize(3)));
 
-        mockMvc.perform(delete("/api/hosts/{id}", dcId))
-                .andExpect(status().is2xxSuccessful());
+        mockMvc.perform(delete("/api/hosts/{id}", hostId))
+                .andExpect(status().isOk());
 
         getHostNodeUnchecked(mockMvc, hostId)
                 .andExpect(status().isNotFound());
@@ -265,6 +270,6 @@ public class HostNodeControllerITCase {
 
         getAppServices(mockMvc, 1, 10)
                 .andExpect(jsonPath("$.results", hasSize(1)))
-                .andExpect(jsonPath("$.results[0].id", is(instanceId3)));
+                .andExpect(jsonPath("$.results[0].id", is((int) instanceId3)));
     }
 }

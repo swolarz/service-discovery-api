@@ -32,6 +32,9 @@ class OptimisticVersionHolderImpl implements OptimisticVersionHolder {
 
     @Override
     public Long restoreVersionForUpdate(@NonNull String versionToken) {
+        if (versionToken == null)
+            throw new IllegalArgumentException("Version token not passed");
+
         String versionValue = redisTemplate.opsForValue().get(resolveKey(versionToken));
 
         if (versionValue == null)

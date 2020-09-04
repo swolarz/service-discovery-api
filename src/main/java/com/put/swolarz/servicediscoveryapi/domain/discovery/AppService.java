@@ -1,13 +1,13 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
 import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NonNull;
+import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 
@@ -16,6 +16,7 @@ import java.util.Set;
 @DynamicUpdate
 @Data
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 class AppService extends BaseEntity {
 
     public static final String TABLE_NAME = "APP_SERVICE";
@@ -27,8 +28,12 @@ class AppService extends BaseEntity {
 
     @Id
     @Column(name = ID_COLUMN_NAME)
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = SEQUENCE_GENERATOR_NAME)
-    @SequenceGenerator(name = SEQUENCE_GENERATOR_NAME, sequenceName = SEQUENCE_GENERATOR_NAME)
+    @GeneratedValue(generator = "AppServiceIdentityAwareGenerator")
+    @GenericGenerator(
+            name = "AppServiceIdentityAwareGenerator",
+            strategy = "com.put.swolarz.servicediscoveryapi.domain.common.data.IdentityAwareGenerator",
+            parameters = @Parameter(name = "sequence_name", value = SEQUENCE_GENERATOR_NAME)
+    )
     private Long id;
 
     @Column(name = NAME_COLUMN_NAME, nullable = false, unique = true, length = 128)
@@ -39,11 +44,16 @@ class AppService extends BaseEntity {
     @NonNull
     private String serviceVersion;
 
-    @OneToMany(mappedBy = "service", cascade = { CascadeType.REMOVE })
-    private Set<ServiceInstance> instances;
+//    @OneToMany(mappedBy = "service", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private Set<ServiceInstance> instances = new HashSet<>();
 
 
     public AppService(String name, String serviceVersion) {
+        this(null, name, serviceVersion);
+    }
+
+    public AppService(Long id, String name, String serviceVersion) {
+        this.id = id;
         this.name = name;
         this.serviceVersion = serviceVersion;
     }

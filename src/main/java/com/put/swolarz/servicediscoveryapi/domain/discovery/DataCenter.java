@@ -3,15 +3,18 @@ package com.put.swolarz.servicediscoveryapi.domain.discovery;
 import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 
 @Entity
 @Table(name = DataCenter.TABLE_NAME)
 @DynamicUpdate
-@Getter
+@Data
 @EqualsAndHashCode(callSuper = true)
 class DataCenter extends BaseEntity {
 
@@ -24,26 +27,34 @@ class DataCenter extends BaseEntity {
 
     @Id
     @Column(name = ID_COLUMN_NAME)
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = SEQUENCE_GENERATOR_NAME)
-    @SequenceGenerator(name = SEQUENCE_GENERATOR_NAME, sequenceName = SEQUENCE_GENERATOR_NAME)
-    @Setter
+    @GeneratedValue(generator = "DataCenterIdentityAwareGenerator")
+    @GenericGenerator(
+            name = "DataCenterIdentityAwareGenerator",
+            strategy = "com.put.swolarz.servicediscoveryapi.domain.common.data.IdentityAwareGenerator",
+            parameters = @Parameter(name = "sequence_name", value = SEQUENCE_GENERATOR_NAME)
+    )
     private Long id;
 
     @Column(name = NAME_COLUMN_NAME, nullable = false, unique = true, length = 128)
-    @Setter
-    @NonNull
     private String name;
 
     @Column(name = LOCATION_COLUMN_NAME, nullable = false)
-    @NonNull
     private final String location;
 
-    @OneToMany(mappedBy = "dataCenter", cascade = { CascadeType.REMOVE })
-    private Set<HostNode> hosts;
+//    @OneToMany(mappedBy = "dataCenter", fetch = FetchType.EAGER, cascade = CascadeType.ALL, orphanRemoval = true)
+//    private Set<HostNode> hosts = new HashSet<>();
 
+
+    public DataCenter() {
+        this.location = null;
+    }
 
     public DataCenter(String name, String location) {
-        this.id = null;
+        this(null, name, location);
+    }
+
+    public DataCenter(Long id, String name, String location) {
+        this.id = id;
         this.name = name;
         this.location = location;
     }

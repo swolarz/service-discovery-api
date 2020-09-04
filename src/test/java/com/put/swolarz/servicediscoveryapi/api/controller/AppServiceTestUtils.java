@@ -57,8 +57,8 @@ class AppServiceTestUtils {
 
     public ResultActions getAppService(MockMvc mockMvc, long id) throws Exception {
         return getAppServiceUnchecked(mockMvc, id)
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions getAppServices(MockMvc mockMvc, int page, int perPage) throws Exception {
@@ -68,8 +68,8 @@ class AppServiceTestUtils {
                         .param("perPage", Integer.toString(perPage))
                         .accept(MediaType.APPLICATION_JSON)
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions postAppService(MockMvc mockMvc, AppServiceRequest request, ObjectMapper mapper) throws Exception {
@@ -82,8 +82,8 @@ class AppServiceTestUtils {
                         .content(mapper.writeValueAsString(request))
                         .header("POE-Token", poeToken)
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(matchesAppServiceRequest(request, null, mapper));
     }
 
@@ -101,8 +101,8 @@ class AppServiceTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(matchesAppServiceRequest(request, id, mapper));
     }
 
@@ -113,8 +113,8 @@ class AppServiceTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions patchAppService(MockMvc mockMvc, Map<String, Object> patch, long id, ObjectMapper mapper) throws Exception {
@@ -124,8 +124,13 @@ class AppServiceTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(patch))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+    }
+
+    public AppServiceDetails readAppService(ResultActions resultActions, ObjectMapper mapper) throws Exception {
+        String responseJson = resultActions.andReturn().getResponse().getContentAsString();
+        return mapper.readValue(responseJson, AppServiceDetails.class);
     }
 
     public ResultMatcher matchesAppServiceRequest(AppServiceRequest appServiceRequest, Long id, ObjectMapper mapper) {
@@ -145,6 +150,6 @@ class AppServiceTestUtils {
         assertEquals(request.getServiceVersion(), response.getServiceVersion());
 
         if (updatable)
-            assertNotNull(request.getDataVersionToken());
+            assertNotNull(response.getDataVersionToken());
     }
 }

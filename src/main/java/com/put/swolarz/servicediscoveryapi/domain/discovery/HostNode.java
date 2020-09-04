@@ -3,9 +3,12 @@ package com.put.swolarz.servicediscoveryapi.domain.discovery;
 import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -14,8 +17,10 @@ import java.util.stream.Collectors;
 @Entity
 @Table(name = HostNode.TABLE_NAME)
 @DynamicUpdate
-@Getter
+@Data
+@ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 class HostNode extends BaseEntity {
 
     public static final String TABLE_NAME = "HOST_NODE";
@@ -30,19 +35,19 @@ class HostNode extends BaseEntity {
 
     @Id
     @Column(name = ID_COLUMN_NAME)
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = SEQUENCE_GENERATOR_NAME)
-    @SequenceGenerator(name = SEQUENCE_GENERATOR_NAME, sequenceName = SEQUENCE_GENERATOR_NAME)
-    @Setter
+    @GenericGenerator(
+            name = "HostNodeIdentityAwareGenerator",
+            strategy = "com.put.swolarz.servicediscoveryapi.domain.common.data.IdentityAwareGenerator",
+            parameters = @Parameter(name = "sequence_name", value = SEQUENCE_GENERATOR_NAME)
+    )
+    @GeneratedValue(generator = "HostNodeIdentityAwareGenerator")
     private Long id;
 
     @Column(name = NAME_COLUMN_NAME, nullable = false, length = 128)
-    @Setter
-    @NonNull
     private String name;
 
     @Enumerated(EnumType.STRING)
     @Column(name = STATUS_COLUMN_NAME, nullable = false, length = 32)
-    @NonNull
     private HostStatus status;
 
     @Column(name = LAUNCHED_AT_COLUMN_NAME)
@@ -50,17 +55,13 @@ class HostNode extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = DATA_CENTER_COLUMN_NAME, nullable = false)
-    @Setter
-    @NonNull
     private DataCenter dataCenter;
 
     @Column(name = OS_COLUMN_NAME, nullable = false, length = 64)
-    @Setter
-    @NonNull
     private String os;
 
-    @OneToMany(mappedBy = "host", cascade = { CascadeType.REMOVE })
-    private Set<ServiceInstance> instances;
+//    @OneToMany(mappedBy = "host", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private Set<ServiceInstance> instances = new HashSet<>();
 
 
     @Builder
@@ -78,18 +79,18 @@ class HostNode extends BaseEntity {
         this.status = status;
         this.launchedAt = resolveLaunchedTime(status);
 
-        updateInstancesStatus(status);
+//        updateInstancesStatus(status);
     }
 
-    private void updateInstancesStatus(HostStatus newStatus) {
-        instances.forEach(instance -> instance.onHostStatusChanged(newStatus));
-    }
+//    private void updateInstancesStatus(HostStatus newStatus) {
+//        getInstances().forEach(instance -> instance.onHostStatusChanged(newStatus));
+//    }
 
     private static LocalDateTime resolveLaunchedTime(HostStatus hostStatus) {
         return (hostStatus.equals(HostStatus.UP) ? LocalDateTime.now() : null);
     }
 
-    public List<Integer> getUsedPorts() {
-        return instances.stream().map(ServiceInstance::getPort).collect(Collectors.toList());
-    }
+//    public List<Integer> getUsedPorts() {
+//        return getInstances().stream().map(ServiceInstance::getPort).collect(Collectors.toList());
+//    }
 }

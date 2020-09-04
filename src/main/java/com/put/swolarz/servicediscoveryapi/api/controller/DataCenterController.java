@@ -6,6 +6,7 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.DataCenterService;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterUpdateData;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,7 +58,7 @@ class DataCenterController {
 
     @PutMapping("/{dataCenterId}")
     public ResponseEntity<DataCenterDetails> putDataCenter(@PathVariable("dataCenterId") long dataCenterId,
-                                                           @RequestBody DataCenterData dataCenterData) {
+                                                           @RequestBody DataCenterData dataCenterData) throws BusinessException {
 
         DataCenterDetails dataCenter = dataCenterService.createOrUpdateDataCenter(dataCenterId, dataCenterData);
         return ResponseEntity.ok(dataCenter);

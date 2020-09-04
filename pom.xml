@@ -105,6 +105,56 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<groupId>io.fabric8</groupId>
+				<artifactId>docker-maven-plugin</artifactId>
+				<version>0.33.0</version>
+
+				<configuration>
+					<images>
+						<image>
+							<alias>service-discovery-db</alias>
+							<name>postgres:11.5</name>
+							<run>
+								<ports>
+									<port>5433:5432</port>
+								</ports>
+								<env>
+									<POSTGRES_USER>service-discovery-api</POSTGRES_USER>
+									<POSTGRES_PASSWORD>secret-postgres-pass</POSTGRES_PASSWORD>
+								</env>
+							</run>
+						</image>
+						<image>
+							<alias>service-discovery-cache-store</alias>
+							<name>redis:6</name>
+							<run>
+								<ports>
+									<port>6380:6379</port>
+								</ports>
+							</run>
+						</image>
+					</images>
+				</configuration>
+
+				<executions>
+					<execution>
+						<id>start</id>
+						<phase>pre-integration-test</phase>
+						<goals>
+							<goal>build</goal>
+							<goal>start</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>stop</id>
+						<phase>post-integration-test</phase>
+						<goals>
+							<goal>stop</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 		</plugins>
 	</build>
 

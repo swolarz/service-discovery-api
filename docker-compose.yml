@@ -30,6 +30,7 @@ services:
             APP_DB_USER: service-discovery-api
             APP_DB_PASS: secret-postgres-pass
             APP_CACHE_HOST: service-discovery-cache-store
+            APP_CACHE_PORT: 6379
 
 volumes:
     app-db-data:

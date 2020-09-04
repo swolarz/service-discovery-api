@@ -8,5 +8,4 @@ databaseChangeLog:
             constraintName: service_instance_host_port_uniq
             tableName: SERVICE_INSTANCE
             columnNames: HOST_ID, PORT
-            clustered: true
             validate: true

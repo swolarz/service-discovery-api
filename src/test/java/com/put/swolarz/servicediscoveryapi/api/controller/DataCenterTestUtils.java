@@ -8,7 +8,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.ResultMatcher;
 
-import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -40,7 +39,8 @@ class DataCenterTestUtils {
                         .param("perPage", Integer.toString(perPage))
                         .accept(MediaType.APPLICATION_JSON)
         )
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions getDataCenterUnchecked(MockMvc mockMvc, long id) throws Exception {
@@ -52,8 +52,8 @@ class DataCenterTestUtils {
 
     public ResultActions getDataCenter(MockMvc mockMvc, long id) throws Exception {
         return getDataCenterUnchecked(mockMvc, id)
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions postDataCenter(MockMvc mockMvc, DataCenterRequest request, ObjectMapper mapper) throws Exception {
@@ -66,8 +66,8 @@ class DataCenterTestUtils {
                         .content(mapper.writeValueAsString(request))
                         .header("POE-Token", poeToken)
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(matchesDataCenterRequest(request, null, mapper));
     }
 
@@ -85,8 +85,8 @@ class DataCenterTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(matchesDataCenterRequest(request, id, mapper));
     }
 
@@ -97,8 +97,8 @@ class DataCenterTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(request))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(matchesDataCenterRequest(request, id, mapper));
     }
 
@@ -109,8 +109,8 @@ class DataCenterTestUtils {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(patch))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public DataCenterDetails readDataCenter(ResultActions resultActions, ObjectMapper mapper) throws Exception {

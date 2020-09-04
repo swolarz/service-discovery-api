@@ -1,7 +1,9 @@
 package com.put.swolarz.servicediscoveryapi.api.controller;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterDetails;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -10,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
 import java.util.Map;
 import java.util.Optional;
 
@@ -31,7 +34,16 @@ class DataCenterControllerITCase {
     private MockMvc mockMvc;
 
     @Autowired
+    private EntityManager entityManager;
+
+    @Autowired
     private ObjectMapper mapper;
+
+
+    @BeforeEach
+    public void setUp() {
+        mapper.enable(DeserializationFeature.USE_LONG_FOR_INTS);
+    }
 
 
     @Test
@@ -53,7 +65,12 @@ class DataCenterControllerITCase {
                 .andExpect(jsonPath("$.perPage", is(10)))
                 .andExpect(jsonPath("$.totalNumber", is(5)))
                 .andExpect(jsonPath("$.results", hasSize(5)))
-                .andExpect(jsonPath("$.results[*].id", containsInAnyOrder(id1, id2, id3, id4, id5)));
+                .andExpect(
+                        jsonPath(
+                                "$.results[*].id",
+                                containsInAnyOrder((int) id1, (int) id2, (int) id3, (int) id4, (int) id5)
+                        )
+                );
 
         getDataCenters(mockMvc, 1, 2)
                 .andExpect(jsonPath("$.page", is(1)))
@@ -147,7 +164,7 @@ class DataCenterControllerITCase {
         );
 
         DataCenterRequest updateRequest = new DataCenterRequest(
-                "aws-data-center", "asia-pacific", patchedDc.getDataVersionToken()
+                "aws-data-center", "Australian Outback", patchedDc.getDataVersionToken()
         );
         putDataCenter(mockMvc, updateRequest, dcId, mapper);
 
@@ -177,7 +194,7 @@ class DataCenterControllerITCase {
         final long dcId = postDataCenterForId(mockMvc, createRequest, mapper);
 
         mockMvc.perform(delete("/api/datacenters/{id}", dcId))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk());
 
         getDataCenterUnchecked(mockMvc, dcId)
                 .andExpect(status().isNotFound());
@@ -204,7 +221,7 @@ class DataCenterControllerITCase {
         long instanceId2 = postServiceInstanceForId(mockMvc, instanceRequest2, mapper);
 
         mockMvc.perform(delete("/api/datacenters/{id}", dcId))
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk());
 
         getDataCenterUnchecked(mockMvc, dcId)
                 .andExpect(status().isNotFound());

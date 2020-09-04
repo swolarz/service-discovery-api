@@ -71,8 +71,8 @@ class OrchestrationControllerITCase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(migrationRequest))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.migratedInstances", is(2)));
 
         getHostNode(mockMvc, hostId)
@@ -82,16 +82,16 @@ class OrchestrationControllerITCase {
                 .andExpect(matchesHostNodeRequest(hostRequest2, hostId2, dcRequest, 3, mapper));
 
         getServiceInstance(mockMvc, instanceId1, serviceId)
-                .andExpect(jsonPath("$.hostNodeId", is(hostId2)));
+                .andExpect(jsonPath("$.hostNodeId", is((int) hostId2)));
 
         getServiceInstance(mockMvc, instanceId2, serviceId)
-                .andExpect(jsonPath("$.hostNodeId", is(hostId2)));
+                .andExpect(jsonPath("$.hostNodeId", is((int) hostId2)));
 
         getServiceInstance(mockMvc, instanceId3, serviceId)
-                .andExpect(jsonPath("$.hostNodeId", is(hostId2)));
+                .andExpect(jsonPath("$.hostNodeId", is((int) hostId2)));
 
         getServiceInstance(mockMvc, instanceId4, serviceId)
-                .andExpect(jsonPath("$.hostNodeId", is(hostId3)));
+                .andExpect(jsonPath("$.hostNodeId", is((int) hostId3)));
     }
 
     @Test
@@ -115,10 +115,10 @@ class OrchestrationControllerITCase {
         long instanceId2 = postServiceInstanceForId(mockMvc, instanceRequest2, mapper);
 
         getHostNode(mockMvc, hostId)
-                .andExpect(matchesHostNodeRequest(hostRequest, hostId, dcRequest, 2, mapper));
+                .andExpect(matchesHostNodeRequest(hostRequest, hostId, dcRequest, 1, mapper));
 
         getHostNode(mockMvc, hostId2)
-                .andExpect(matchesHostNodeRequest(hostRequest2, hostId, dcRequest, 1, mapper));
+                .andExpect(matchesHostNodeRequest(hostRequest2, hostId2, dcRequest, 1, mapper));
 
         MigrationRequest migrationRequest = new MigrationRequest(hostId, hostId2);
         mockMvc.perform(
@@ -127,9 +127,9 @@ class OrchestrationControllerITCase {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(migrationRequest))
         )
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.migratedInstances", is(2)));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.migratedInstances", is(1)));
 
         getHostNode(mockMvc, hostId)
                 .andExpect(matchesHostNodeRequest(hostRequest, hostId, dcRequest, 0, mapper));
@@ -138,11 +138,11 @@ class OrchestrationControllerITCase {
                 .andExpect(matchesHostNodeRequest(hostRequest2, hostId2, dcRequest, 2, mapper));
 
         getServiceInstance(mockMvc, instanceId1, serviceId)
-                .andExpect(jsonPath("$.hostNodeId", is(hostId2)))
+                .andExpect(jsonPath("$.hostNodeId", is((int) hostId2)))
                 .andExpect(jsonPath("$.port", not(80)));
 
         getServiceInstance(mockMvc, instanceId2, serviceId)
-                .andExpect(jsonPath("$.hostNodeId", is(hostId2)))
+                .andExpect(jsonPath("$.hostNodeId", is((int) hostId2)))
                 .andExpect(jsonPath("$.port", is(80)));
     }
 

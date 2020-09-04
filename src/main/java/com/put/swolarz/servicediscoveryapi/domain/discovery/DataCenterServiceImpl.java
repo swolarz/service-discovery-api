@@ -8,8 +8,10 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterUpdateData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
+import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.HostNodeNotFoundException;
 import com.put.swolarz.servicediscoveryapi.domain.websync.OptimisticVersionHolder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,19 +21,23 @@ import org.springframework.stereotype.Service;
 @Service
 @ReadWriteTransaction
 @RequiredArgsConstructor
+@Slf4j
 class DataCenterServiceImpl implements DataCenterService {
 
     private final DataCenterRepository dataCenterRepository;
     private final OptimisticVersionHolder versionHolder;
 
+    private final HostNodeService hostNodeService;
+    private final HostNodeRepository hostNodeRepository;
+
 
     @Override
     @ReadOnlyTransaction
     public ResultsPage<DataCenterDetails> getDataCenters(int page, int perPage) {
-        PageRequest pageRequest = PageRequest.of(page, perPage);
+        PageRequest pageRequest = PageRequest.of(page - 1, perPage);
         Page<DataCenter> dataCentersPage = dataCenterRepository.findAll(pageRequest);
 
-        return DtoUtils.toDtoResultsPage(dataCentersPage, pageRequest, this::toDataCenterInfoDetails, DataCenterDetails.class);
+        return DtoUtils.toDtoResultsPage(dataCentersPage, page, perPage, this::toDataCenterInfoDetails, DataCenterDetails.class);
     }
 
     @Override
@@ -45,7 +51,7 @@ class DataCenterServiceImpl implements DataCenterService {
 
     @Override
     public DataCenterDetails createDataCenter(DataCenterData dataCenterData) {
-        DataCenter dataCenter = dataCenterRepository.save(
+        DataCenter dataCenter = dataCenterRepository.saveAndFlush(
                 new DataCenter(dataCenterData.getName(), dataCenterData.getLocation())
         );
 
@@ -57,7 +63,10 @@ class DataCenterServiceImpl implements DataCenterService {
         DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
                 .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
 
-        return toDataCenterDetails(makeDataCenterUpdate(dataCenter, dataCenterData), true);
+        dataCenter = makeDataCenterUpdate(dataCenter, dataCenterData);
+        dataCenter = dataCenterRepository.saveAndFlush(dataCenter);
+
+        return toDataCenterDetails(dataCenter, true);
     }
 
     @Override
@@ -71,6 +80,7 @@ class DataCenterServiceImpl implements DataCenterService {
 
         dataCenterUpdateData.getName().ifPresent(dataCenter::setName);
 
+        dataCenter = dataCenterRepository.saveAndFlush(dataCenter);
         return toDataCenterDetails(dataCenter, true);
     }
 
@@ -78,11 +88,9 @@ class DataCenterServiceImpl implements DataCenterService {
     public DataCenterDetails createOrUpdateDataCenter(long dataCenterId, DataCenterData dataCenterData) {
         DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
                 .map(dc -> makeDataCenterUpdate(dc, dataCenterData))
-                .orElseGet(() ->
-                        dataCenterRepository.save(
-                                new DataCenter(dataCenterData.getName(), dataCenterData.getLocation())
-                        )
-                );
+                .orElseGet(() -> new DataCenter(dataCenterId, dataCenterData.getName(), dataCenterData.getLocation()));
+
+        dataCenter = dataCenterRepository.saveAndFlush(dataCenter);
 
         return toDataCenterDetails(dataCenter, true);
     }
@@ -98,12 +106,22 @@ class DataCenterServiceImpl implements DataCenterService {
 
     @Override
     public void removeDataCenter(long dataCenterId) throws DataCenterNotFoundException {
-        try {
-            dataCenterRepository.deleteById(dataCenterId);
-        }
-        catch (EmptyResultDataAccessException e) {
-            throw new DataCenterNotFoundException(dataCenterId, e);
-        }
+        DataCenter dataCenter = dataCenterRepository.findById(dataCenterId)
+                .orElseThrow(() -> new DataCenterNotFoundException(dataCenterId));
+
+//        dataCenter.getHosts().stream()
+        hostNodeRepository.findAllByDataCenterId(dataCenterId)
+                .map(HostNode::getId)
+                .forEach(hostId -> {
+                    try {
+                        hostNodeService.removeHostNode(hostId);
+                    }
+                    catch (HostNodeNotFoundException e) {
+                        log.warn(String.format("Unable to remove data center's (id = %d) host node with id = %d", dataCenterId, hostId), e);
+                    }
+                });
+
+        dataCenterRepository.delete(dataCenter);
     }
 
     private DataCenterDetails toDataCenterInfoDetails(DataCenter dataCenter) {

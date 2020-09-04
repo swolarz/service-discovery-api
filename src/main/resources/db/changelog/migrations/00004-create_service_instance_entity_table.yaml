@@ -2,6 +2,16 @@ databaseChangeLog:
   - changeSet:
       id: 00004-1
       author: swolarz
+      comment: Create sequence generator DDL for ServiceInstance ids
+      changes:
+        - createSequence:
+            sequenceName: SERVICE_INSTANCE_SEQ_GEN
+            startValue: 1
+            incrementBy: 1
+
+  - changeSet:
+      id: 00004-2
+      author: swolarz
       comment: Create table DDL for ServiceInstance entity
       changes:
         - createTable:
@@ -43,7 +53,7 @@ databaseChangeLog:
                     nullable: false
 
   - changeSet:
-      id: 00004-2
+      id: 00004-3
       author: swolarz
       comment: Add foreign key statement for ServiceInstance referencing AppService entity
       changes:
@@ -54,8 +64,9 @@ databaseChangeLog:
             referencedTableName: APP_SERVICE
             referencedColumnNames: ID
             referencesUniqueColumn: true
+
   - changeSet:
-      id: 00004-3
+      id: 00004-4
       author: swolarz
       comment: Add foreign key statement for ServiceInstance referencing HostNode entity
       changes:
@@ -66,13 +77,3 @@ databaseChangeLog:
             referencedTableName: HOST_NODE
             referencedColumnNames: ID
             referencesUniqueColumn: true
-
-  - changeSet:
-      id: 00004-4
-      author: swolarz
-      comment: Create sequence generator DDL for ServiceInstance ids
-      changes:
-        - createSequence:
-            sequenceName: SERVICE_INSTANCE_SEQ_GEN
-            minValue: 1
-            incrementBy: 1

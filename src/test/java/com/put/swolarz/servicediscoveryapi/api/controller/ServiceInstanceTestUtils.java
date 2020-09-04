@@ -26,7 +26,8 @@ class ServiceInstanceTestUtils {
                         .param("perPage", Integer.toString(perPage))
                         .accept(MediaType.APPLICATION_JSON)
         )
-                .andExpect(status().is2xxSuccessful());
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions getServiceInstanceUnchecked(MockMvc mockMvc, long id, long appServiceId) throws Exception {
@@ -38,8 +39,8 @@ class ServiceInstanceTestUtils {
 
     public ResultActions getServiceInstance(MockMvc mockMvc, long id, long appServiceId) throws Exception {
         return getServiceInstanceUnchecked(mockMvc, id, appServiceId)
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public ResultActions postServiceInstanceUnchecked(MockMvc mockMvc, ServiceInstanceRequest request, ObjectMapper mapper)
@@ -60,8 +61,8 @@ class ServiceInstanceTestUtils {
             throws Exception {
 
         return postServiceInstanceUnchecked(mockMvc, request, mapper)
-                .andExpect(status().is2xxSuccessful())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
     }
 
     public long postServiceInstanceForId(MockMvc mockMvc, ServiceInstanceRequest request, ObjectMapper mapper)
@@ -97,7 +98,7 @@ class ServiceInstanceTestUtils {
 
         assertEquals(instanceRequest.getPort(), instanceDetails.getPort());
 
-        assertEquals("up", instanceDetails.getStatus().toLowerCase());
+        assertEquals("running", instanceDetails.getStatus().toLowerCase());
         assertNotNull(instanceDetails.getStartedAt());
     }
 }

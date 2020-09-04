@@ -14,6 +14,8 @@ interface ServiceInstanceRepository extends JpaRepository<ServiceInstance, Long>
     Page<ServiceInstance> findByServiceId(long appServiceId, Pageable pageable);
     Optional<ServiceInstance> findByIdAndServiceId(long id, long appServiceId);
 
+    List<ServiceInstancePort> findUsedPortsByHostId(long hostId);
+
     Stream<ServiceInstance> findAllByHostId(long hostId);
     Stream<ServiceInstance> findAllByServiceId(long serviceId);
     long countByServiceId(long serviceId);
@@ -21,4 +23,6 @@ interface ServiceInstanceRepository extends JpaRepository<ServiceInstance, Long>
     boolean existsByHostIdAndPort(long hostId, int port);
 
     int countByHostId(long hostId);
+
+    void deleteByServiceId(long serviceId);
 }

@@ -3,6 +3,8 @@ package com.put.swolarz.servicediscoveryapi.domain.discovery;
 import com.put.swolarz.servicediscoveryapi.domain.common.data.BaseEntity;
 import lombok.*;
 import org.hibernate.annotations.DynamicUpdate;
+import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.Parameter;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -23,6 +25,7 @@ import java.time.LocalDateTime;
 @DynamicUpdate
 @Data
 @EqualsAndHashCode(callSuper = true)
+@NoArgsConstructor
 class ServiceInstance extends BaseEntity {
 
     public static final String TABLE_NAME = "SERVICE_INSTANCE";
@@ -37,18 +40,20 @@ class ServiceInstance extends BaseEntity {
 
     @Id
     @Column(name = ID_COLUMN_NAME)
-    @GeneratedValue(strategy = GenerationType.AUTO, generator = SEQUENCE_GENERATOR_NAME)
-    @SequenceGenerator(name = SEQUENCE_GENERATOR_NAME, sequenceName = SEQUENCE_GENERATOR_NAME)
+    @GeneratedValue(generator = "ServiceInstanceIdentityAwareGenerator")
+    @GenericGenerator(
+            name = "ServiceInstanceIdentityAwareGenerator",
+            strategy = "com.put.swolarz.servicediscoveryapi.domain.common.data.IdentityAwareGenerator",
+            parameters = @Parameter(name = "sequence_name", value = SEQUENCE_GENERATOR_NAME)
+    )
     private Long id;
 
     @ManyToOne
     @JoinColumn(name = SERVICE_COLUMN_NAME, nullable = false)
-    @NonNull
     private AppService service;
 
     @ManyToOne
     @JoinColumn(name = HOST_COLUMN_NAME, nullable = false)
-    @NonNull
     private HostNode host;
 
     @Column(name = PORT_COLUMN_NAME, nullable = false)
