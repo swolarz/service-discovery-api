@@ -14,7 +14,6 @@ import com.put.swolarz.servicediscoveryapi.domain.websync.OptimisticVersionHolde
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -289,7 +288,7 @@ class AppServicesServiceImpl implements AppServicesService {
 
         while (launched < toLaunchNum) {
             if (hostNodes.isEmpty())
-                throw new IllegalStateException("Failed to replicate service. Not enough number of available ports");
+                throw new IllegalStateException("Failed to replicate service. Not enough available hosts");
 
             List<HostNode> toRemove = new ArrayList<>();
 

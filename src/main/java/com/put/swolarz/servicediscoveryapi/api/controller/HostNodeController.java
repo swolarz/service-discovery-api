@@ -23,7 +23,7 @@ class HostNodeController {
 
     @GetMapping
     public ResponseEntity<ResultsPage<HostNodeDetails>> getHostNodes(
-            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
             @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage) throws BusinessException {
 
         ResultsPage<HostNodeDetails> resultsPage = hostNodeService.getHostNodesPage(page, perPage);

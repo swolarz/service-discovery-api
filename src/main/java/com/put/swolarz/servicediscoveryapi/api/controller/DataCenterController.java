@@ -6,7 +6,6 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.DataCenterService;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterData;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterDetails;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.DataCenterUpdateData;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.DataCenterNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,7 +23,7 @@ class DataCenterController {
 
     @GetMapping
     public ResponseEntity<ResultsPage<DataCenterDetails>> getDataCenters(
-            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
             @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage) {
 
         ResultsPage<DataCenterDetails> results = dataCenterService.getDataCenters(page, perPage);

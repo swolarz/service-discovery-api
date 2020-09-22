@@ -4,7 +4,6 @@ import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.*;
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.AppServicesService;
-import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.AppServiceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +21,7 @@ class AppServiceController {
 
     @GetMapping
     public ResponseEntity<ResultsPage<AppServiceDetails>> getAppServices(
-            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
             @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage) {
 
         ResultsPage<AppServiceDetails> resultPage = appServicesService.getAppServices(page, perPage);
@@ -38,7 +37,7 @@ class AppServiceController {
     @GetMapping("/{appServiceId}/instances")
     public ResponseEntity<ResultsPage<ServiceInstanceDetails>> getAppServiceInstances(
             @PathVariable("appServiceId") long appServiceId,
-            @RequestParam(value = "page", required = false, defaultValue = "0") int page,
+            @RequestParam(value = "page", required = false, defaultValue = "1") int page,
             @RequestParam(value = "perPage", required = false, defaultValue = "10") int perPage) throws BusinessException {
 
         ResultsPage<ServiceInstanceDetails> resultsPage = appServicesService.getAppServiceInstances(appServiceId, page, perPage);
