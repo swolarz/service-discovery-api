@@ -4,6 +4,7 @@ import com.put.swolarz.servicediscoveryapi.api.controller.PostOnceExactlyExcepti
 import com.put.swolarz.servicediscoveryapi.domain.common.exception.BusinessException;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.*;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,7 +32,8 @@ class ApiExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler({
             IllegalArgumentException.class,
-            HostPortAlreadyInUse.class
+            HostPortAlreadyInUse.class,
+            DataIntegrityViolationException.class
     })
     public ResponseEntity<ApiErrorResponse> handleBadRequestException(Exception e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
