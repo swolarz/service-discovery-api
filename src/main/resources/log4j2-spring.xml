@@ -4,7 +4,7 @@
     <Appenders>
         <Console name="ConsoleAppender" target="SYSTEM_OUT">
             <PatternLayout>
-                    <pattern>%style{%d}{black} [%highlight{%-5level }] %style{%t}{bright,blue} %style{%C{1.}}{bright,yellow}: %msg%n%throwable</pattern>
+                    <pattern>%style{%d}{white} [%highlight{%-5level }] %style{%t}{bright,blue} %style{%C{1.}}{bright,yellow}: %msg%n%throwable</pattern>
             </PatternLayout>
         </Console>
 

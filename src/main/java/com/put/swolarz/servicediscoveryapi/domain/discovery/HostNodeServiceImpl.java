@@ -1,6 +1,7 @@
 package com.put.swolarz.servicediscoveryapi.domain.discovery;
 
 import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadOnlyTransaction;
+import com.put.swolarz.servicediscoveryapi.domain.common.data.ReadWriteTransaction;
 import com.put.swolarz.servicediscoveryapi.domain.common.dto.ResultsPage;
 import com.put.swolarz.servicediscoveryapi.domain.common.util.DtoUtils;
 import com.put.swolarz.servicediscoveryapi.domain.discovery.dto.HostNodeDetails;
@@ -13,7 +14,6 @@ import com.put.swolarz.servicediscoveryapi.domain.discovery.exception.ServiceIns
 import com.put.swolarz.servicediscoveryapi.domain.websync.OptimisticVersionHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Service;
 
 
 @Service
-@ReadOnlyTransaction
+@ReadWriteTransaction
 @RequiredArgsConstructor
 @Slf4j
 class HostNodeServiceImpl implements HostNodeService {
@@ -35,6 +35,7 @@ class HostNodeServiceImpl implements HostNodeService {
 
 
     @Override
+    @ReadOnlyTransaction
     public ResultsPage<HostNodeDetails> getHostNodesPage(int page, int perPage) {
         Pageable pageRequest = PageRequest.of(page - 1, perPage);
         Page<HostNode> resultsPage = hostNodeRepository.findAll(pageRequest);
@@ -43,6 +44,7 @@ class HostNodeServiceImpl implements HostNodeService {
     }
 
     @Override
+    @ReadOnlyTransaction
     public HostNodeDetails getHostNode(long hostNodeId) throws HostNodeNotFoundException {
         HostNode hostNode = hostNodeRepository.findById(hostNodeId)
                 .orElseThrow(() -> new HostNodeNotFoundException(hostNodeId));
